@@ -24,18 +24,21 @@ namespace XpressShip.API.Middlewares
                 return;
             }
 
-            if (!context.Request.Headers.TryGetValue("X-Api-Key", out var extractedApiKey) ||
-                !context.Request.Headers.TryGetValue("X-Secret-Key", out var extractedSecretKey))
+            if (!context.Request.Headers.TryGetValue("X-Api-Key", out var extractedApiKeyValues) ||
+                !context.Request.Headers.TryGetValue("X-Secret-Key", out var extractedSecretKeyValues))
             {
                 context.Response.StatusCode = 401; // Unauthorized
                 await context.Response.WriteAsync("API Key or Secret Key is missing.");
                 return;
             }
 
-            var client = await dbContext.ApiClients
-                .FirstOrDefaultAsync(a => a.ApiKey == extractedApiKey && a.IsActive);
+            var apiKey = extractedApiKeyValues.FirstOrDefault();
+            var secretKey = extractedSecretKeyValues.FirstOrDefault();
 
-            if (client == null || string.IsNullOrEmpty(extractedSecretKey) || !VerifySecretKey(extractedSecretKey!, client.SecretKey))
+            var client = await dbContext.ApiClients
+                .FirstOrDefaultAsync(a => a.ApiKey == apiKey && a.IsActive);
+
+            if (client == null || string.IsNullOrEmpty(secretKey) || !VerifySecretKey(secretKey!, client.SecretKey))
             {
                 context.Response.StatusCode = 403; // Forbidden
                 await context.Response.WriteAsync("Invalid API Key or Secret Key.");

@@ -4,10 +4,12 @@ using XpressShip.Application.Behaviours;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services;
+using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Options;
 using XpressShip.Infrastructure.Persistence;
 using XpressShip.Infrastructure.Persistence.Repositories;
 using XpressShip.Infrastructure.Services;
+using XpressShip.Infrastructure.Services.Session;
 
 namespace XpressShip.API
 {
@@ -19,6 +21,9 @@ namespace XpressShip.API
             builder.Services.AddAuthorization();
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
+
+            // Add ProblemDetails services
+            builder.Services.AddProblemDetails();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -50,6 +55,8 @@ namespace XpressShip.API
 
             // Register Services
             #region Register Client Services
+            builder.Services.AddScoped<IClientSessionService, SessionService>();
+            builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
             builder.Services.AddScoped<ICalculatorService, CalculatorService>();
             #endregion
@@ -59,10 +66,13 @@ namespace XpressShip.API
             builder.Services.Configure<APISettings>(APISettings.GeoCodeAPI,
                     builder.Configuration.GetSection("API:GeoCodeAPI"));
             builder.Services.Configure<ShippingRatesSettings>(builder.Configuration.GetSection("ShippingRatesSettings"));
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailConfiguration"));
         }
 
         public static void RegisterMiddlewares(this WebApplication app)
         {
+            app.UseExceptionHandler();
+
             app.UseStatusCodePages(async statusCodeCntx
                     => await TypedResults.Problem(statusCode: statusCodeCntx.HttpContext.Response.StatusCode)
                  .ExecuteAsync(statusCodeCntx.HttpContext));
