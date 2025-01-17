@@ -17,14 +17,23 @@ namespace XpressShip.Domain.Validation
                 { "Turkey", (["Ankara", "Istanbul", "Izmir"], @"^\d{5}$") }
             };
 
+        public static bool ValidateShipmentRate(Shipment shipment, ShipmentRate shipmentRate, bool throwException = true)
+        {
+            var originAddress = shipment.OriginAddress ?? shipment.ApiClient.Address;
+
+            return ValidateWeigth(shipment.Weight, shipmentRate, throwException) &&
+            ValidateDimensions(shipment.Dimensions, throwException) &&
+            ValidateAddress(originAddress, throwException) &&
+            ValidateAddress(shipment.DestinationAddress, throwException);
+        }
+
         // Validate dimensions in the format LxWxH
         public static bool ValidateDimensions(string dimensions, bool throwException = true)
         {
             bool isValid = DimensionsPatternRegex().IsMatch(dimensions);
             if (!isValid && throwException)
-            {
                 throw new ValidationException("Invalid dimensions format. Expected format: LxWxH.");
-            }
+
             return isValid;
         }
 
@@ -33,9 +42,8 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = volume > 0 && rate.MinVolume <= volume && volume <= rate.MaxVolume;
             if (!isValid && throwException)
-            {
                 throw new ValidationException("Volume is out of the allowed range.");
-            }
+
             return isValid;
         }
 
@@ -44,9 +52,9 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = distance > 0 && rate.MinDistance <= distance && distance <= rate.MaxDistance;
             if (!isValid && throwException)
-            {
                 throw new ValidationException("Distance is out of the allowed range.");
-            }
+
+
             return isValid;
         }
 
@@ -55,10 +63,35 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = weight > 0 && rate.MinWeight <= weight && weight <= rate.MaxWeight;
             if (!isValid && throwException)
-            {
                 throw new ValidationException("Weight is out of the allowed range.");
-            }
+
             return isValid;
+        }
+
+        public static bool ValidateCountryAndCities(string country, IEnumerable<string>? cities, bool throwException = true)
+        {
+            if (!ValidCountries.TryGetValue(country, out (string[] Cities, string PostalCodePattern) countryInfo))
+            {
+                if (throwException) throw new ValidationException("Country is not supported.");
+
+                return false;
+            }
+
+            if (cities?.Any() != null)
+            {
+                foreach (var city in cities)
+                {
+                    if (!countryInfo.Cities.Contains(city))
+                    {
+                        if (throwException) throw new ValidationException($"City ({city}) is invalid for the specified country.");
+
+                        return false;
+                    }
+                }
+            }
+
+
+            return true;
         }
         public static bool ValidateAddress(string country, string city, string postalCode, string street, bool throwException = true)
         {
@@ -67,19 +100,15 @@ namespace XpressShip.Domain.Validation
                 string.IsNullOrWhiteSpace(postalCode) ||
                 string.IsNullOrWhiteSpace(street))
             {
-                if (throwException)
-                {
-                    throw new ValidationException("Invalid address details.");
-                }
+                if (throwException) throw new ValidationException("Invalid address details.");
+
                 return false;
             }
 
             if (!ValidCountries.TryGetValue(country, out (string[] Cities, string PostalCodePattern) countryInfo))
             {
-                if (throwException)
-                {
-                    throw new ValidationException("Country is not supported.");
-                }
+                if (throwException) throw new ValidationException("Country is not supported.");
+
                 return false;
             }
 
@@ -87,9 +116,7 @@ namespace XpressShip.Domain.Validation
             bool isPostalCodeValid = new Regex(countryInfo.PostalCodePattern).IsMatch(postalCode);
 
             if (!(isCityValid && isPostalCodeValid) && throwException)
-            {
                 throw new ValidationException("City or postal code is invalid for the specified country.");
-            }
 
             return isCityValid && isPostalCodeValid;
         }
@@ -105,19 +132,15 @@ namespace XpressShip.Domain.Validation
                 address.Latitude < -90 || address.Latitude > 90 ||
                 address.Longitude < -180 || address.Longitude > 180)
             {
-                if (throwException)
-                {
-                    throw new ValidationException("Invalid address details.");
-                }
+                if (throwException) throw new ValidationException("Invalid address details.");
+
                 return false;
             }
 
             if (!ValidCountries.TryGetValue(address.Country, out (string[] Cities, string PostalCodePattern) countryInfo))
             {
-                if (throwException)
-                {
-                    throw new ValidationException("Country is not supported.");
-                }
+                if (throwException) throw new ValidationException("Country is not supported.");
+
                 return false;
             }
 
@@ -125,9 +148,8 @@ namespace XpressShip.Domain.Validation
             bool isPostalCodeValid = new Regex(countryInfo.PostalCodePattern).IsMatch(address.PostalCode);
 
             if (!(isCityValid && isPostalCodeValid) && throwException)
-            {
                 throw new ValidationException("City or postal code is invalid for the specified country.");
-            }
+
 
             return isCityValid && isPostalCodeValid;
         }

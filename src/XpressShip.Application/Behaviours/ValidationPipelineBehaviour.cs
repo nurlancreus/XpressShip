@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -30,10 +31,18 @@ namespace XpressShip.Application.Behaviours
             var validationErrors = validationResponse
                 .SelectMany(x => x.Errors)
                 .Where(e => e != null)
-                .Select(x => x.ErrorMessage)
+                //.Select(x => x.ErrorMessage)
                 .ToList();
 
-            if (validationErrors.Count != 0) throw new Exceptions.ValidationException(validationErrors);
+            // If there are any failures, throw a ValidationException with custom error messages
+            if (validationErrors.Count != 0)
+            {
+                var validationFailures = validationErrors
+                    .Select(f => new ValidationFailure(f.PropertyName, f.ErrorMessage))
+                    .ToList();
+
+                throw new ValidationException(validationFailures);
+            }
 
             return await next();
         }
