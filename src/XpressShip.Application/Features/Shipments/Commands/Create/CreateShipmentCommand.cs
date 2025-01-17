@@ -14,7 +14,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
 {
     public record CreateShipmentCommand : IRequest<ResponseWithData<ShipmentDTO>>
     {
-        public string Status { get; set; } = string.Empty;  // Using enum for status
         public string Method { get; set; } = string.Empty;  // Shipping method using enum
         public double Weight { get; set; }  // Weight of the package
         public string Dimensions { get; set; } = string.Empty;  // Package dimensions (e.g., "10x10x10 cm")
