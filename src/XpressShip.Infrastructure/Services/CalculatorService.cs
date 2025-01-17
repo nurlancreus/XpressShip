@@ -5,6 +5,8 @@ using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Validation;
 
+using Geolocation;
+
 namespace XpressShip.Infrastructure.Services
 {
     public class CalculatorService : ICalculatorService
@@ -19,10 +21,12 @@ namespace XpressShip.Infrastructure.Services
         // Calculate estimated delivery date for a shipment
         public DateTime CalculateEstimatedDelivery(Shipment shipment)
         {
-            var distance = ICalculatorService.CalculateDistance(shipment.OriginAddress, shipment.DestinationAddress);
+            var originAddress = shipment.OriginAddress ?? shipment.ApiClient.Address;
+
+            var distance = ICalculatorService.CalculateDistance(originAddress, shipment.DestinationAddress);
 
             int baseDays = CalculateDefaultDeliveryTime(distance, shipment.Rate);
-            int deliveryTime = CalculateDeliveryTime(baseDays, shipment.Method, shipment.Rate);
+            int deliveryTime = ICalculatorService.CalculateDeliveryTime(baseDays, shipment.Method, shipment.Rate);
 
             return DateTime.Now.AddDays(deliveryTime);
         }
@@ -31,14 +35,16 @@ namespace XpressShip.Infrastructure.Services
         public decimal CalculateShippingCost(Shipment shipment)
         {
             decimal baseCost = shipment.Rate.BaseRate;
-            decimal weightCost = CalculateWeightCost(shipment.Weight, shipment.Rate);
-            decimal volumeCost = CalculateSizeCost(shipment.Dimensions, shipment.Rate);
+            decimal weightCost = ICalculatorService.CalculateWeightCost(shipment.Weight, shipment.Rate);
+            decimal volumeCost = ICalculatorService.CalculateSizeCost(shipment.Dimensions, shipment.Rate);
 
             var originAddress = shipment.OriginAddress ?? shipment.ApiClient.Address;
-            var distance = ICalculatorService.CalculateDistance(originAddress, shipment.DestinationAddress);
-            decimal distanceCost = CalculateDistanceCost(distance, shipment.Rate);
 
-            decimal totalCost = CalculateDeliveryCost(baseCost + weightCost + volumeCost + distanceCost, shipment.Method, shipment.Rate);
+            var distance = ICalculatorService.CalculateDistance(originAddress, shipment.DestinationAddress);
+
+            decimal distanceCost = ICalculatorService.CalculateDistanceCost(distance, shipment.Rate);
+
+            decimal totalCost = ICalculatorService.CalculateDeliveryCost(baseCost + weightCost + volumeCost + distanceCost, shipment.Method, shipment.Rate);
 
             return totalCost;
         }
@@ -46,56 +52,6 @@ namespace XpressShip.Infrastructure.Services
         private int CalculateDefaultDeliveryTime(double distance, ShipmentRate rate)
         {
             return _shippingRatesSettings.DefaultDays + (int)Math.Ceiling(distance / _shippingRatesSettings.DefaultDistance);
-        }
-
-        private static int CalculateDeliveryTime(int baseDays, ShipmentMethod method, ShipmentRate rate)
-        {
-            return method switch
-            {
-                ShipmentMethod.Standard => baseDays,
-                ShipmentMethod.Express => (int)Math.Ceiling(baseDays * rate.ExpressDeliveryTimeMultiplier),
-                ShipmentMethod.Overnight => (int)Math.Ceiling(baseDays * rate.OvernightDeliveryTimeMultiplier),
-                _ => baseDays
-            };
-        }
-
-        private static decimal CalculateDeliveryCost(decimal subtotal, ShipmentMethod method, ShipmentRate rate)
-        {
-            return method switch
-            {
-                ShipmentMethod.Standard => subtotal,
-                ShipmentMethod.Express => subtotal * (decimal)rate.ExpressRateMultiplier,
-                ShipmentMethod.Overnight => subtotal * (decimal)rate.OvernightRateMultiplier,
-                _ => subtotal
-            };
-        }
-
-        private static decimal CalculateWeightCost(double weight, ShipmentRate rate)
-        {
-            IValidationService.ValidateWeigth(weight, rate);
-
-            return (decimal)(weight * rate.BaseRateForKg);
-        }
-
-        private static decimal CalculateDistanceCost(double distance, ShipmentRate rate)
-        {
-            IValidationService.ValidateDistance(distance, rate);
-
-            return (decimal)(distance * rate.BaseRateForKm);
-        }
-
-        private static decimal CalculateSizeCost(string dimensions, ShipmentRate rate)
-        {
-            int volume = ICalculatorService.CalculateVolume(dimensions);
-
-            return CalculateSizeCost(volume, rate);
-        }
-
-        private static decimal CalculateSizeCost(int volume, ShipmentRate rate)
-        {
-            IValidationService.ValidateVolume(volume, rate);
-
-            return volume * (decimal)rate.BaseRateForVolume;
-        }
+        }  
     }
 }
