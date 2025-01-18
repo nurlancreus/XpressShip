@@ -17,16 +17,6 @@ namespace XpressShip.Domain.Validation
                 { "Turkey", (["Ankara", "Istanbul", "Izmir"], @"^\d{5}$") }
             };
 
-        public static bool ValidateShipmentRate(Shipment shipment, ShipmentRate shipmentRate, bool throwException = true)
-        {
-            var originAddress = shipment.OriginAddress ?? shipment.ApiClient.Address;
-
-            return ValidateWeigth(shipment.Weight, shipmentRate, throwException) &&
-            ValidateDimensions(shipment.Dimensions, throwException) &&
-            ValidateAddress(originAddress, throwException) &&
-            ValidateAddress(shipment.DestinationAddress, throwException);
-        }
-
         // Validate dimensions in the format LxWxH
         public static bool ValidateDimensions(string dimensions, bool throwException = true)
         {
@@ -66,92 +56,6 @@ namespace XpressShip.Domain.Validation
                 throw new ValidationException("Weight is out of the allowed range.");
 
             return isValid;
-        }
-
-        public static bool ValidateCountryAndCities(string country, IEnumerable<string>? cities, bool throwException = true)
-        {
-            if (!ValidCountries.TryGetValue(country, out (string[] Cities, string PostalCodePattern) countryInfo))
-            {
-                if (throwException) throw new ValidationException("Country is not supported.");
-
-                return false;
-            }
-
-            if (cities?.Any() != null)
-            {
-                foreach (var city in cities)
-                {
-                    if (!countryInfo.Cities.Contains(city))
-                    {
-                        if (throwException) throw new ValidationException($"City ({city}) is invalid for the specified country.");
-
-                        return false;
-                    }
-                }
-            }
-
-
-            return true;
-        }
-        public static bool ValidateAddress(string country, string city, string postalCode, string street, bool throwException = true)
-        {
-            if (string.IsNullOrWhiteSpace(country) ||
-                string.IsNullOrWhiteSpace(city) ||
-                string.IsNullOrWhiteSpace(postalCode) ||
-                string.IsNullOrWhiteSpace(street))
-            {
-                if (throwException) throw new ValidationException("Invalid address details.");
-
-                return false;
-            }
-
-            if (!ValidCountries.TryGetValue(country, out (string[] Cities, string PostalCodePattern) countryInfo))
-            {
-                if (throwException) throw new ValidationException("Country is not supported.");
-
-                return false;
-            }
-
-            bool isCityValid = countryInfo.Cities.Contains(city);
-            bool isPostalCodeValid = new Regex(countryInfo.PostalCodePattern).IsMatch(postalCode);
-
-            if (!(isCityValid && isPostalCodeValid) && throwException)
-                throw new ValidationException("City or postal code is invalid for the specified country.");
-
-            return isCityValid && isPostalCodeValid;
-        }
-
-
-        // Validate address fields including format, latitude, and longitude
-        public static bool ValidateAddress(Address address, bool throwException = true)
-        {
-            if (address == null ||
-                string.IsNullOrWhiteSpace(address.Street) ||
-                string.IsNullOrWhiteSpace(address.City) ||
-                string.IsNullOrWhiteSpace(address.PostalCode) ||
-                address.Latitude < -90 || address.Latitude > 90 ||
-                address.Longitude < -180 || address.Longitude > 180)
-            {
-                if (throwException) throw new ValidationException("Invalid address details.");
-
-                return false;
-            }
-
-            if (!ValidCountries.TryGetValue(address.Country, out (string[] Cities, string PostalCodePattern) countryInfo))
-            {
-                if (throwException) throw new ValidationException("Country is not supported.");
-
-                return false;
-            }
-
-            bool isCityValid = countryInfo.Cities.Contains(address.City);
-            bool isPostalCodeValid = new Regex(countryInfo.PostalCodePattern).IsMatch(address.PostalCode);
-
-            if (!(isCityValid && isPostalCodeValid) && throwException)
-                throw new ValidationException("City or postal code is invalid for the specified country.");
-
-
-            return isCityValid && isPostalCodeValid;
         }
 
         // Improved regex for dimension validation

@@ -12,6 +12,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
     public record UpdateShipmentStatusCommand : IRequest<ResponseWithData<ShipmentDTO>>
     {
         public Guid? Id { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 }

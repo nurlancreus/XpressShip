@@ -28,9 +28,15 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
             var shipments = _shipmentRepository.Table
                 .Include(s => s.Rate)
                 .Include(s => s.OriginAddress)
+                    .ThenInclude(a => a.City)
+                        .ThenInclude(c => c.Country)
                 .Include(s => s.DestinationAddress)
+                    .ThenInclude(a => a.City)
+                        .ThenInclude(c => c.Country)
                 .Include(s => s.ApiClient)
                     .ThenInclude(c => c.Address)
+                        .ThenInclude(a => a.City)
+                            .ThenInclude(c => c.Country)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -50,46 +56,30 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
             // Filter by Origin Location
             if (request.OriginCountry is string originCountry)
             {
+                var origins = shipments.Select(s => new { country = (s.OriginAddress ?? s.ApiClient.Address).City.Country.Name, city = (s.OriginAddress ?? s.ApiClient.Address).City.Name });
+
                 if (request.OriginCity is string originCity)
                 {
-                    var isValid = IValidationService.ValidateCountryAndCities(originCountry, [originCity], false);
-                    if (isValid)
-                    {
-                        shipments = shipments.Where(s =>
-                            (s.OriginAddress ?? s.ApiClient.Address).Country == originCountry &&
-                            (s.OriginAddress ?? s.ApiClient.Address).City == originCity);
-                    }
+                    shipments = shipments.Where(s => origins.Select(o => o.city).Contains(originCity));
                 }
                 else
                 {
-                    var isValid = IValidationService.ValidateCountryAndCities(originCountry, null, false);
-                    if (isValid)
-                    {
-                        shipments = shipments.Where(s => (s.OriginAddress ?? s.ApiClient.Address).Country == originCountry);
-                    }
+                    shipments = shipments.Where(s => origins.Select(o => o.country).Contains(originCountry));
                 }
             }
 
             // Filter by Destination Location
             if (request.DestinationCountry is string destinationCountry)
             {
+                var destinations = shipments.Select(s => new { country = s.DestinationAddress.City.Country.Name, city = s.DestinationAddress.City.Name });
+
                 if (request.DestinationCity is string destinationCity)
                 {
-                    var isValid = IValidationService.ValidateCountryAndCities(destinationCountry, [destinationCity], false);
-                    if (isValid)
-                    {
-                        shipments = shipments.Where(s =>
-                            s.DestinationAddress.Country == destinationCountry &&
-                            s.DestinationAddress.City == destinationCity);
-                    }
+                    shipments = shipments.Where(s => destinations.Select(d => d.city).Contains(destinationCity));
                 }
                 else
                 {
-                    var isValid = IValidationService.ValidateCountryAndCities(destinationCountry, null, false);
-                    if (isValid)
-                    {
-                        shipments = shipments.Where(s => s.DestinationAddress.Country == destinationCountry);
-                    }
+                    shipments = shipments.Where(s => destinations.Select(d => d.country).Contains(destinationCountry));
                 }
             }
 

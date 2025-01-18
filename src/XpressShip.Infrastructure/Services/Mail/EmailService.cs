@@ -27,23 +27,6 @@ namespace XpressShip.Infrastructure.Services.Mail
             _emailConfig = emailSettings.Value;
         }
 
-        public async Task<MailStatus> GetEmailStatusAsync(string emailId)
-        {
-            // Simulated example: In real-world, integrate with an email provider to get status
-            await Task.Delay(100); // Simulate delay
-            return MailStatus.Sent; // Example: Returning "Sent" as a static value
-        }
-
-        public async Task ScheduleEmailAsync(RecipientDetailsDTO recipientDetails, string subject, string body, DateTime scheduleTime)
-        {
-            var delay = scheduleTime - DateTime.Now;
-            if (delay <= TimeSpan.Zero)
-                throw new ArgumentException("Scheduled time must be in the future.");
-
-            await Task.Delay(delay); // Simulate delay for scheduling
-            await SendEmailAsync(recipientDetails, subject, body);
-        }
-
         public async Task SendBulkEmailAsync(IEnumerable<RecipientDetailsDTO> recipientsDetails, string subject, string body)
         {
             var message = new MessageDTO
@@ -90,35 +73,6 @@ namespace XpressShip.Infrastructure.Services.Mail
             await SendAsync(message);
         }
 
-
-        public async Task SendEmailWithCustomHeadersAsync(RecipientDetailsDTO recipientDetails, string subject, string body, Dictionary<string, string> headers)
-        {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(_emailConfig.UserName, _emailConfig.From));
-            message.To.Add(new MailboxAddress(recipientDetails.Name, recipientDetails.Email));
-            message.Subject = subject;
-
-            foreach (var header in headers)
-            {
-                message.Headers.Add(header.Key, header.Value);
-            }
-
-            message.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
-            await SendAsync(message);
-        }
-
-        public async Task SendTemplatedEmailAsync(RecipientDetailsDTO recipientDetails, string templateName, object templateData)
-        {
-            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"{templateName}.html");
-            if (!File.Exists(templatePath))
-                throw new FileNotFoundException("Email template not found.", templatePath);
-
-            var templateContent = await File.ReadAllTextAsync(templatePath);
-            var body = ReplaceTemplatePlaceholders(templateContent, templateData);
-
-            await SendEmailAsync(recipientDetails, $"Subject from {templateName}", body);
-        }
-
         private MimeMessage CreateEmailMessage(MessageDTO message)
         {
             var emailMessage = new MimeMessage();
@@ -161,19 +115,6 @@ namespace XpressShip.Infrastructure.Services.Mail
                 client.Disconnect(true);
                 client.Dispose();
             }
-        }
-
-        private static string ReplaceTemplatePlaceholders(string template, object templateData)
-        {
-            var jsonData = JsonSerializer.Serialize(templateData);
-            var dataDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonData);
-
-            foreach (var placeholder in dataDictionary)
-            {
-                template = template.Replace($"{{{{ {placeholder.Key} }}}}", placeholder.Value);
-            }
-
-            return template;
         }
     }
 

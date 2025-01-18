@@ -1,14 +1,17 @@
 ﻿using Geolocation;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
-using XpressShip.Domain.Validation;
 
-namespace XpressShip.Application.Interfaces.Services
+namespace XpressShip.Application.Interfaces.Services.Calculator
 {
-    public interface ICalculatorService
+    public interface IDeliveryCalculatorService
     {
         DateTime CalculateEstimatedDelivery(Shipment shipment);
-        decimal CalculateShippingCost(Shipment shipment);
         public static double CalculateDistance(Address originAddress, Address destinationAddress)
         {
             return CalculateDistance(originAddress.Latitude, originAddress.Longitude, destinationAddress.Latitude, destinationAddress.Longitude);
@@ -34,54 +37,7 @@ namespace XpressShip.Application.Interfaces.Services
                 _ => baseDays
             };
         }
-
-        public static decimal CalculateDeliveryCost(decimal subtotal, ShipmentMethod method, ShipmentRate rate)
-        {
-            return method switch
-            {
-                ShipmentMethod.Standard => subtotal,
-                ShipmentMethod.Express => subtotal * (decimal)rate.ExpressRateMultiplier,
-                ShipmentMethod.Overnight => subtotal * (decimal)rate.OvernightRateMultiplier,
-                _ => subtotal
-            };
-        }
-
-        public static decimal CalculateWeightCost(double weight, ShipmentRate rate)
-        {
-            IValidationService.ValidateWeigth(weight, rate);
-
-            return (decimal)(weight * rate.BaseRateForKg);
-        }
-
-        public static decimal CalculateDistanceCost(double distance, ShipmentRate rate)
-        {
-            IValidationService.ValidateDistance(distance, rate);
-
-            return (decimal)(distance * rate.BaseRateForKm);
-        }
-
-        public static decimal CalculateSizeCost(string dimensions, ShipmentRate rate)
-        {
-            int volume = CalculateVolume(dimensions);
-
-            return CalculateSizeCost(volume, rate);
-        }
-
-        public static decimal CalculateSizeCost(int volume, ShipmentRate rate)
-        {
-            IValidationService.ValidateVolume(volume, rate);
-
-            return volume * (decimal)rate.BaseRateForVolume;
-        }
-
-        public static int CalculateVolume(string dimensions)
-        {
-            IValidationService.ValidateDimensions(dimensions);
-
-            return dimensions.Split('x').Select(int.Parse).Aggregate((x, y) => x * y);
-        }
-
-        public static double CalculateHaversine(double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
+        public static double CalculateDistanceByHaversine(double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
         {
             const double EarthRadius = 6371.0; // Earth's radius in kilometers
 
@@ -104,13 +60,6 @@ namespace XpressShip.Application.Interfaces.Services
             // Calculate the distance
             double distance = EarthRadius * c; // Distance in kilometers
             return distance;
-        }
-        public static double CalculateHaversine(Address origin, Address destination)
-        {
-            IValidationService.ValidateAddress(origin);
-            IValidationService.ValidateAddress(destination);
-
-            return CalculateHaversine(origin.Latitude, origin.Longitude, destination.Latitude, destination.Longitude);
         }
     }
 }

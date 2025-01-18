@@ -10,7 +10,12 @@ namespace XpressShip.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(s => s.Id);
 
-           
+            builder.HasMany(s => s.Shipments)
+                .WithOne(sh => sh.Rate)
+                .HasForeignKey(sh => sh.ShipmentRateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(s => s.Name).IsUnique();
         }
     }
 }

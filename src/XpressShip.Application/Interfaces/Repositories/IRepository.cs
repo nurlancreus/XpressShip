@@ -16,6 +16,7 @@ namespace XpressShip.Application.Interfaces.Repositories
         Task<IEnumerable<T>> GetAllAsync(bool isTrackingActive = true, CancellationToken cancellationToken = default);
         Task<T?> GetByIdAsync(Guid id, bool isTrackingActive = true, CancellationToken cancellationToken = default);
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, bool isTrackingActive = true, CancellationToken cancellationToken = default);
+        Task<bool> IsExistAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
         Task AddAsync(T entity, CancellationToken cancellationToken = default);
         void Update(T entity);
         void Delete(T entity);

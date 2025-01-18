@@ -60,5 +60,10 @@ namespace XpressShip.Infrastructure.Persistence.Repositories
 
             return await query.FirstAsync(x => x.Id == id, cancellationToken);
         }
+
+        public Task<bool> IsExistAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            return _dbSet.AnyAsync(predicate, cancellationToken);
+        }
     }
 }

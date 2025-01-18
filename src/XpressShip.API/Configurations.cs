@@ -4,12 +4,16 @@ using XpressShip.Application.Behaviours;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services;
+using XpressShip.Application.Interfaces.Services.Calculator;
 using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Options;
+using XpressShip.Domain.Validation;
 using XpressShip.Infrastructure.Persistence;
 using XpressShip.Infrastructure.Persistence.Repositories;
 using XpressShip.Infrastructure.Services;
+using XpressShip.Infrastructure.Services.Calculator;
 using XpressShip.Infrastructure.Services.Session;
+using XpressShip.Infrastructure.Services.Validation;
 
 namespace XpressShip.API
 {
@@ -50,15 +54,18 @@ namespace XpressShip.API
             builder.Services.AddScoped<IApiClientRepository, ApiClientRepository>();
             builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
             builder.Services.AddScoped<IShipmentRateRepository, ShipmentRateRepository>();
+            builder.Services.AddScoped<ICountryRepository, CountryRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             #endregion
 
             // Register Services
             #region Register Client Services
             builder.Services.AddScoped<IClientSessionService, SessionService>();
+            builder.Services.AddScoped<IAddressValidationService, AddressValidationService>();
             builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
-            builder.Services.AddScoped<ICalculatorService, CalculatorService>();
+            builder.Services.AddScoped<ICostCalculatorService, CostCalculatorService>();
+            builder.Services.AddScoped<IDeliveryCalculatorService, DeliveryCalculatorService>();
             #endregion
 
 

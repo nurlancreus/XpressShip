@@ -15,7 +15,6 @@ namespace XpressShip.Application.Features.Addresses.DTOs
         public Guid Id { get; set; }
         public string Street { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
-        public string? State { get; set; }
         public string PostalCode { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
         public double Latitude { get; set; }
@@ -30,10 +29,9 @@ namespace XpressShip.Application.Features.Addresses.DTOs
         {
             Id = address.Id;
             Street = address.Street;
-            City = address.City;
-            State = address.State;
+            City = address.City.Name;
             PostalCode = address.PostalCode;
-            Country = address.Country;
+            Country = address.City.Country.Name;
             Latitude = address.Latitude;
             Longitude = address.Longitude;
             CreatedAt = address.CreatedAt;

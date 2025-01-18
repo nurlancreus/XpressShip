@@ -13,7 +13,10 @@ namespace XpressShip.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.SeedClients();
+            modelBuilder
+                .SeedLocations()
+                .SeedClients()
+                .SeedShipmentRates();
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetAssembly(typeof(ShipmentConfiguration))!);
 
@@ -30,7 +33,8 @@ namespace XpressShip.Infrastructure.Persistence
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<ShipmentRate> ShippingRates { get; set; }
-
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<City> Cities {  get; set; }
 
         private void UpdateDateTimesWhileSavingInterceptor()
         {

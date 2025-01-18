@@ -18,27 +18,26 @@ using XpressShip.Domain.Exceptions;
 using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Application.DTOs;
 using XpressShip.Domain.Extensions;
+using XpressShip.Application.Interfaces.Services.Calculator;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
     public class UpdateShipmentDetailsHandler : IRequestHandler<UpdateShipmentDetailsCommand, ResponseWithData<ShipmentDTO>>
     {
         private readonly IClientSessionService _clientSessionService;
+        private readonly IAddressValidationService _addressValidationService;
+        private readonly ICountryRepository _countryRepository;
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IShipmentRateRepository _shipmentRateRepository;
-        private readonly ICalculatorService _calculatorService;
+        private readonly ICostCalculatorService _calculatorService;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateShipmentDetailsHandler(
-            IClientSessionService clientSessionService,
-            IShipmentRepository shipmentRepository,
-            IShipmentRateRepository shipmentRateRepository,
-            ICalculatorService calculatorService,
-            IGeoInfoService geoInfoService,
-            IUnitOfWork unitOfWork)
+        public UpdateShipmentDetailsHandler(IClientSessionService clientSessionService, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, ICostCalculatorService calculatorService, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
         {
             _clientSessionService = clientSessionService;
+            _addressValidationService = addressValidationService;
+            _countryRepository = countryRepository;
             _shipmentRepository = shipmentRepository;
             _shipmentRateRepository = shipmentRateRepository;
             _calculatorService = calculatorService;
@@ -78,16 +77,48 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
             if (request.Origin is AddressCommandDTO originAddress)
             {
+                // Validate Origin Address
+                await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(originAddress.Country, originAddress.City, originAddress.PostalCode, true, cancellationToken);
+
                 var originGeoInfo = await _geoInfoService.GetLocationGeoInfoByNameAsync(originAddress.Country, originAddress.City, cancellationToken);
 
-                shipment.OriginAddress = Address.Create(originAddress.Country, originAddress.City, originAddress.State, originAddress.PostalCode, originAddress.Street, originGeoInfo.Latitude, originGeoInfo.Longitude);
+                shipment.OriginAddress = Address.Create(originAddress.PostalCode, originAddress.Street, originGeoInfo.Latitude, originGeoInfo.Longitude);
+
+                var country = await _countryRepository.Table
+                            .Include(c => c.Cities)
+                            .Select(c => new { c.Name, c.Cities })
+                            .FirstOrDefaultAsync(c => c.Name == originAddress.Country, cancellationToken);
+
+                country = country.EnsureNonNull();
+
+                var city = country.Cities.FirstOrDefault(c => c.Name == originAddress.City);
+
+                city = city.EnsureNonNull();
+
+                shipment.OriginAddress.City = city;
             }
 
             if (request.Destination is AddressCommandDTO destinationAddress)
             {
+                // Validate Destination Address
+                await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(destinationAddress.Country, destinationAddress.City, destinationAddress.PostalCode, true, cancellationToken);
+
                 var destinationGeoInfo = await _geoInfoService.GetLocationGeoInfoByNameAsync(destinationAddress.Country, destinationAddress.City, cancellationToken);
 
-                shipment.DestinationAddress = Address.Create(destinationAddress.Country, destinationAddress.City, destinationAddress.State, destinationAddress.PostalCode, destinationAddress.Street, destinationGeoInfo.Latitude, destinationGeoInfo.Longitude);
+                shipment.DestinationAddress = Address.Create(destinationAddress.PostalCode, destinationAddress.Street, destinationGeoInfo.Latitude, destinationGeoInfo.Longitude);
+
+                var country = await _countryRepository.Table
+                            .Include(c => c.Cities)
+                            .Select(c => new { c.Name, c.Cities })
+                            .FirstOrDefaultAsync(c => c.Name == destinationAddress.Country, cancellationToken);
+
+                country = country.EnsureNonNull();
+
+                var city = country.Cities.FirstOrDefault(c => c.Name == destinationAddress.City);
+
+                city = city.EnsureNonNull();
+
+                shipment.DestinationAddress.City = city;
             }
 
             if (request.Weight is double weight && shipment.Weight != weight)
@@ -115,13 +146,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             // Persist shipment
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var dto = new ShipmentDTO(shipment);
-
             return new ResponseWithData<ShipmentDTO>
             {
                 IsSuccess = true,
                 Message = "Shipment updated successfully",
-                Data = dto
+                Data = new ShipmentDTO(shipment)
             };
         }
     }

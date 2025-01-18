@@ -20,7 +20,6 @@ namespace XpressShip.Application.Features.ApiClients.DTOs
         public string City { get; set; } = string.Empty;
         public string Street { get; set; } = string.Empty;
         public string PostalCode { get; set; } = string.Empty;
-        public string? State { get; set; }
         public DateTime CreatedAt { get; set; }
         public AddressDTO? Address { get; set; }  // Navigation Property to Address
         public ICollection<ShipmentDTO> Shipments { get; set; } = []; // Navigation Property to Shipments
@@ -34,11 +33,10 @@ namespace XpressShip.Application.Features.ApiClients.DTOs
             ApiKey = apiClient.ApiKey;
             SecretKey = apiClient.SecretKey;
             IsActive = apiClient.IsActive;
-            Country = apiClient.Address.Country;
-            City = apiClient.Address.City;
+            Country = apiClient.Address.City.Country.Name;
+            City = apiClient.Address.City.Name;
             Street = apiClient.Address.Street;
             PostalCode = apiClient.Address.PostalCode;
-            State = apiClient.Address.State;
             CreatedAt = apiClient.CreatedAt;
             Address = new AddressDTO(apiClient.Address);
             Shipments = apiClient.Shipments.Select(s => new ShipmentDTO(s)).ToList();
