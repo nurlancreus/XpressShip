@@ -15,12 +15,13 @@ namespace XpressShip.Infrastructure.Services.Session
     {
         private readonly IHeaderDictionary? _headers = httpContextAccessor?.HttpContext?.Request.Headers;
 
-        public string GetApiKey()
+        public string? GetApiKey(bool throwException = true)
         {
             // Extract API Key values from request headers
             if (_headers == null || !_headers.TryGetValue("X-Api-Key", out var apiKeyValues))
             {
-                throw new ValidationException("API Key is missing.");
+                if (throwException) throw new ValidationException("API Key is missing.");
+                else return null;
             }
 
             var extractedApiKey = apiKeyValues.FirstOrDefault();
@@ -28,13 +29,14 @@ namespace XpressShip.Infrastructure.Services.Session
             return extractedApiKey.EnsureNonNull("API Key");
         }
 
-        public (string apiKey, string secretKey) GetClientApiAndSecretKey()
+        public (string apiKey, string secretKey)? GetClientApiAndSecretKey(bool throwException = true)
         {
             // Extract API Key and Secret Key values from request headers
             if (_headers == null || !_headers.TryGetValue("X-Api-Key", out var apiKeyValues) ||
                 !_headers.TryGetValue("X-Secret-Key", out var secretKeyValues))
             {
-                throw new ValidationException("API Key or Secret Key is missing.");
+                if (throwException) throw new ValidationException("API Key or Secret Key is missing.");
+                else return null;
             }
 
             var extractedApiKey = apiKeyValues.FirstOrDefault();
@@ -46,12 +48,13 @@ namespace XpressShip.Infrastructure.Services.Session
             return (apiKey, secretKey);
         }
 
-        public string GetSecretKey()
+        public string? GetSecretKey(bool throwException = true)
         {
             // Extract Secret Key values from request headers
             if (_headers == null || !_headers.TryGetValue("X-Secret-Key", out var secretKeyValues))
             {
-                throw new ValidationException("Secret Key is missing.");
+                if (throwException) throw new ValidationException("Secret Key is missing.");
+                else return null;
             }
 
             var extractedSecretKey = secretKeyValues.FirstOrDefault();

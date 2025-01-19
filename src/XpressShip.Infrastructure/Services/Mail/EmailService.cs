@@ -96,25 +96,13 @@ namespace XpressShip.Infrastructure.Services.Mail
         private async Task SendAsync(MimeMessage mailMessage)
         {
             using var client = new SmtpClient();
-            try
-            {
-                client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, SecureSocketOptions.StartTls);
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-                client.Authenticate(_emailConfig.UserName, _emailConfig.Password);
 
-                await client.SendAsync(mailMessage);
-            }
-            catch (Exception ex)
-            {
-                // Log an error or rethrow the exception
-                Console.WriteLine($"Email sending failed: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                client.Disconnect(true);
-                client.Dispose();
-            }
+            client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, SecureSocketOptions.StartTls);
+            client.AuthenticationMechanisms.Remove("XOAUTH2");
+            client.Authenticate(_emailConfig.UserName, _emailConfig.Password);
+
+            await client.SendAsync(mailMessage);
+
         }
     }
 

@@ -9,15 +9,8 @@ namespace XpressShip.Application.Interfaces.Services.Calculator
 {
     public interface ITaxCalculatorService
     {
-        public static decimal CalculateTaxAppliedPrice(decimal totalCost, decimal taxPercentage)
-        {
-            return totalCost * (1 - taxPercentage / 100);
-        }
+        decimal CalculateTaxAppliedPrice(decimal totalCost, decimal taxPercentage);
 
-
-        public static decimal CalculateTaxAppliedPrice(decimal totalCost, Address destination)
-        {
-            return totalCost * (1 - destination.City.Country.TaxPercentage / 100);
-        }
+        decimal CalculateTaxAppliedPrice(decimal totalCost, Address destination);
     }
 }

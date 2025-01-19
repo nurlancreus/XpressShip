@@ -12,44 +12,15 @@ namespace XpressShip.Application.Interfaces.Services.Calculator
     public interface ICostCalculatorService
     {
         decimal CalculateShippingCost(Shipment shipment);
-        public static decimal CalculateDeliveryCost(decimal subtotal, ShipmentMethod method, ShipmentRate rate)
-        {
-            return method switch
-            {
-                ShipmentMethod.Standard => subtotal,
-                ShipmentMethod.Express => subtotal * (decimal)rate.ExpressRateMultiplier,
-                ShipmentMethod.Overnight => subtotal * (decimal)rate.OvernightRateMultiplier,
-                _ => subtotal
-            };
-        }
+        decimal CalculateDeliveryCost(decimal subtotal, ShipmentMethod method, ShipmentRate rate);
 
-        public static decimal CalculateWeightCost(double weight, ShipmentRate rate)
-        {
-            IValidationService.ValidateWeigth(weight, rate);
+        decimal CalculateWeightCost(double weight, ShipmentRate rate);
 
-            return (decimal)(weight * rate.BaseRateForKg);
-        }
+        decimal CalculateDistanceCost(double distance, ShipmentRate rate);
 
-        public static decimal CalculateDistanceCost(double distance, ShipmentRate rate)
-        {
-            IValidationService.ValidateDistance(distance, rate);
+        decimal CalculateSizeCost(string dimensions, ShipmentRate rate);
 
-            return (decimal)(distance * rate.BaseRateForKm);
-        }
-
-        public static decimal CalculateSizeCost(string dimensions, ShipmentRate rate)
-        {
-            int volume = ICalculatorService.CalculateVolume(dimensions);
-
-            return CalculateSizeCost(volume, rate);
-        }
-
-        public static decimal CalculateSizeCost(int volume, ShipmentRate rate)
-        {
-            IValidationService.ValidateVolume(volume, rate);
-
-            return volume * (decimal)rate.BaseRateForVolume;
-        }
+        decimal CalculateSizeCost(int volume, ShipmentRate rate);
 
     }
 }

@@ -8,8 +8,8 @@ namespace XpressShip.Application.Interfaces.Services.Session
 {
     public interface IClientSessionService
     {
-        (string apiKey, string secretKey) GetClientApiAndSecretKey();
-        string GetApiKey();
-        string GetSecretKey();
+        (string apiKey, string secretKey)? GetClientApiAndSecretKey(bool throwException = true);
+        string? GetApiKey(bool throwException = true);
+        string? GetSecretKey(bool throwException = true);
     }
 }
