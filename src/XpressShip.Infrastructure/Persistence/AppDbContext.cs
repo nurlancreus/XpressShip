@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Entities.Base;
@@ -13,14 +14,18 @@ namespace XpressShip.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder
-                .SeedLocations()
-                .SeedClients()
-                .SeedShipmentRates();
+            modelBuilder.SeedData();
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetAssembly(typeof(ShipmentConfiguration))!);
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+
+            base.OnConfiguring(optionsBuilder);
         }
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -34,7 +39,8 @@ namespace XpressShip.Infrastructure.Persistence
         public DbSet<Address> Addresses { get; set; }
         public DbSet<ShipmentRate> ShippingRates { get; set; }
         public DbSet<Country> Countries { get; set; }
-        public DbSet<City> Cities {  get; set; }
+        public DbSet<City> Cities { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         private void UpdateDateTimesWhileSavingInterceptor()
         {

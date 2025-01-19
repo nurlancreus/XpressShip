@@ -12,8 +12,8 @@ using XpressShip.Infrastructure.Persistence;
 namespace XpressShip.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250118122034_init")]
-    partial class init
+    [Migration("20250119105825_mig_1")]
+    partial class mig_1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -73,7 +73,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000002"),
                             CityId = new Guid("c1a0b1b0-0001-0000-0000-000000000001"),
                             ClientId = new Guid("e1a0b1b0-0001-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Latitude = 40.375588499999999,
                             Longitude = 49.832800900000002,
                             PostalCode = "AZ1000",
@@ -122,11 +122,11 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000001"),
-                            ApiKey = "kjkcwruVZEgqSAdWdrg3gf3LKyLH2UAzpSZdZxf41RE=",
+                            ApiKey = "DtCjCFdg8F5UwN4qh+jq4x5F0F3NZH7kwlStqeJT1xQ=",
                             CompanyName = "My Company",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             IsActive = true,
-                            SecretKey = "APe+2/k+jqleimz8LTgYgLsrdqQjKcHtPkbsNwrXYZhape98pO+aTxSvGwbvu9xkYN/EL1SpMyFxADvZ86mpwg=="
+                            SecretKey = "DDdTq31f3XFZB0Q37bylv9OWXdh4JJMD1D0Q2JdXxnjHcv1U8D0anqmagSVizoKyIWUH53/MftB4BTFD/qvwaw=="
                         });
                 });
 
@@ -160,91 +160,91 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Baku"
                         },
                         new
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Sumqayit"
                         },
                         new
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000003"),
                             CountryId = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Ganja"
                         },
                         new
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Moscow"
                         },
                         new
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Saint Petersburg"
                         },
                         new
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000003"),
                             CountryId = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Kazan"
                         },
                         new
                         {
                             Id = new Guid("b1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("b1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Tbilisi"
                         },
                         new
                         {
                             Id = new Guid("b1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("b1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Batumi"
                         },
                         new
                         {
                             Id = new Guid("d1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("d1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Tabriz"
                         },
                         new
                         {
                             Id = new Guid("d1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("d1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Tehran"
                         },
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Ankara"
                         },
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Istanbul"
                         },
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000003"),
                             CountryId = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Izmir"
                         });
                 });
@@ -289,7 +289,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "AZE",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Azerbaijan",
                             PostalCodePattern = "AZ\\s\\d{4}$",
                             TaxPercentage = 20m
@@ -298,7 +298,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "RUS",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Russia",
                             PostalCodePattern = "^\\d{6}$",
                             TaxPercentage = 18m
@@ -307,7 +307,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("b1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "GEO",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Georgia",
                             PostalCodePattern = "^\\d{4}$",
                             TaxPercentage = 15m
@@ -316,7 +316,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("d1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "IRN",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Iran",
                             PostalCodePattern = "^\\d{10}$",
                             TaxPercentage = 25m
@@ -325,7 +325,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "TUR",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Name = "Turkey",
                             PostalCodePattern = "^\\d{5}$",
                             TaxPercentage = 18m
@@ -480,7 +480,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 1.5,
                             BaseRateForKm = 0.050000000000000003,
                             BaseRateForVolume = 2.0,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Description = "Rate for small packages within local regions.",
                             ExpressDeliveryTimeMultiplier = 0.80000000000000004,
                             ExpressRateMultiplier = 1.2,
@@ -501,7 +501,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 2.0,
                             BaseRateForKm = 0.10000000000000001,
                             BaseRateForVolume = 3.0,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Description = "Rate for medium-sized packages within regional areas.",
                             ExpressDeliveryTimeMultiplier = 0.69999999999999996,
                             ExpressRateMultiplier = 1.3,
@@ -522,7 +522,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 3.5,
                             BaseRateForKm = 0.20000000000000001,
                             BaseRateForVolume = 4.5,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Description = "Rate for large packages for national deliveries.",
                             ExpressDeliveryTimeMultiplier = 0.59999999999999998,
                             ExpressRateMultiplier = 1.5,
@@ -543,7 +543,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 5.0,
                             BaseRateForKm = 0.29999999999999999,
                             BaseRateForVolume = 6.0,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Description = "Rate for heavy packages for international deliveries.",
                             ExpressDeliveryTimeMultiplier = 0.5,
                             ExpressRateMultiplier = 1.7,
@@ -564,7 +564,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 7.0,
                             BaseRateForKm = 0.5,
                             BaseRateForVolume = 8.0,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
                             Description = "Rate for oversized freight shipments globally.",
                             ExpressDeliveryTimeMultiplier = 0.40000000000000002,
                             ExpressRateMultiplier = 2.0,
