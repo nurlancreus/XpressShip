@@ -16,6 +16,10 @@ namespace XpressShip.Domain.Entities
 
         public ICollection<Address> Addresses { get; set; } = [];
 
+        private City()
+        {
+            
+        }
         private City(string name, Guid countryId)
         {
             Name = name;

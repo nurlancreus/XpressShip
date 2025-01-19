@@ -5,7 +5,7 @@ using XpressShip.Domain.Exceptions;
 
 namespace XpressShip.Domain.Validation
 {
-    public partial interface IValidationService
+    public partial class ValidationRules
     {
         private const string DimensionPattern = @"^\s*(\d+)\s*[xX]\s*(\d+)\s*[xX]\s*(\d+)\s*(cm|CM)?\s*$";
         public static Dictionary<string, (string[] Cities, string PostalCodePattern)> ValidCountries { get; set; } = new()
@@ -20,7 +20,7 @@ namespace XpressShip.Domain.Validation
         // Validate dimensions in the format LxWxH
         public static bool ValidateDimensions(string dimensions, bool throwException = true)
         {
-            bool isValid = DimensionsPatternRegex().IsMatch(dimensions);
+            bool isValid = new Regex(DimensionPattern).IsMatch(dimensions);
             if (!isValid && throwException)
                 throw new ValidationException("Invalid dimensions format. Expected format: LxWxH.");
 
@@ -49,7 +49,7 @@ namespace XpressShip.Domain.Validation
         }
 
         // Validate that the weight is within allowed range
-        public static bool ValidateWeigth(double weight, ShipmentRate rate, bool throwException = true)
+        public static bool ValidateWeight(double weight, ShipmentRate rate, bool throwException = true)
         {
             bool isValid = weight > 0 && rate.MinWeight <= weight && weight <= rate.MaxWeight;
             if (!isValid && throwException)
@@ -57,9 +57,5 @@ namespace XpressShip.Domain.Validation
 
             return isValid;
         }
-
-        // Improved regex for dimension validation
-        [GeneratedRegex(DimensionPattern)]
-        private static partial Regex DimensionsPatternRegex();
     }
 }

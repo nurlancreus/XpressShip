@@ -15,11 +15,14 @@ namespace XpressShip.Domain.Entities
         public double Longitude { get; set; }
         public Guid CityId { get; set; }
         public City City { get; set; } = null!;
-        public Guid? ClientId { get; set; } // Foreign key to ApiClient
+        public Guid? ClientId { get; set; } 
         public ApiClient? Client { get; set; }
         public ICollection<Shipment> ShipmentsOrigin { get; set; } = [];
         public ICollection<Shipment> ShipmentsDestination { get; set; } = [];
+        private Address()
+        {
 
+        }
         private Address(string postalCode, string street, double latitude, double longitude)
         {
             PostalCode = postalCode;

@@ -14,11 +14,15 @@ namespace XpressShip.Domain.Entities
 
         public ICollection<Shipment> Shipments { get; set; } = []; // Navigation Property to Shipments
 
+        private ApiClient()
+        {
+            
+        }
         private ApiClient(string companyName)
         {
             CompanyName = companyName;
-            ApiKey = IGenerator.GenerateApiKey();
-            SecretKey = IGenerator.GenerateSecretKey();
+            ApiKey = Generator.GenerateApiKey();
+            SecretKey = Generator.GenerateSecretKey();
             IsActive = true;
         }
 

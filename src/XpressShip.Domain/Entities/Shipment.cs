@@ -11,27 +11,34 @@ namespace XpressShip.Domain.Entities
 {
     public class Shipment : BaseEntity
     {
-        public string TrackingNumber { get; set; } = string.Empty;  // Unique tracking number
-        public ShipmentStatus Status { get; set; }  // Using enum for status
+        public string TrackingNumber { get; set; } = string.Empty; 
+        public ShipmentStatus Status { get; set; }  
         public DateTime EstimatedDate { get; set; }
-        public ShipmentMethod Method { get; set; }  // Shipping method using enum
-        public double Weight { get; set; }  // Weight of the package
-        public string Dimensions { get; set; } = string.Empty;  // Package dimensions (e.g., "10x10x10 cm")
-        public string? Note { get; set; }  // Additional note for the shipment
-        public decimal Cost { get; set; }  // Cost of the shipment
-        public Guid ShipmentRateId { get; set; }  // Foreign key to ShipmentRate
+        public ShipmentMethod Method { get; set; }  
+        public double Weight { get; set; }  
+        public string Dimensions { get; set; } = string.Empty; 
+        public string? Note { get; set; } 
+        public decimal Cost { get; set; }  
+        public Guid ShipmentRateId { get; set; } 
         public ShipmentRate Rate { get; set; } = null!;
-        public Guid? OriginAddressId { get; set; }  // Foreign key to Address
-        public Address? OriginAddress { get; set; } // Navigation property to Origin Address if null then origin address taken from client (company)
-        public Guid DestinationAddressId { get; set; }  // Foreign key to Address
-        public Address DestinationAddress { get; set; } = null!;  // Navigation property to Destination Address
+        public Guid? OriginAddressId { get; set; } 
+        public Address? OriginAddress { get; set; } 
+        public Guid DestinationAddressId { get; set; } 
+        public Address DestinationAddress { get; set; } = null!; 
 
-        public Guid ApiClientId { get; set; } // Foreign key to ApiClient
-        public ApiClient ApiClient { get; set; } = null!; // Navigation property to ApiClient
+        public Guid? ApiClientId { get; set; } 
+        public ApiClient? ApiClient { get; set; } 
+
+        public Payment? Payment { get; set; }
+
+        private Shipment()
+        {
+            
+        }
 
         private Shipment(double weight, string dimensions, ShipmentMethod method, string? note)
         {
-            TrackingNumber = IGenerator.GenerateTrackingNumber();
+            TrackingNumber = Generator.GenerateTrackingNumber();
             Status = ShipmentStatus.Pending;
             Weight = weight;
             Dimensions = dimensions;

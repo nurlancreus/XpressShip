@@ -16,7 +16,7 @@ namespace XpressShip.Domain.Entities
 
         public ICollection<City> Cities { get; set; } = [];
 
-        public Country()
+        private Country()
         {
             
         }

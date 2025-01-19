@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace XpressShip.Domain
 {
-    public interface IGenerator
+    public class Generator
     {
         public static string GenerateApiKey()
         {
