@@ -52,16 +52,22 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                                 .Include(s => s.OriginAddress)
                                 .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
-                                    .ThenInclude(c => c.Address)
+                                    .ThenInclude(c => c!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
             if (shipment is null) throw new ValidationException("Shipment not found.");
 
-            var (apiKey, secretKey) = _clientSessionService.GetClientApiAndSecretKey();
-
-            if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+            if (shipment.ApiClient is not null)
             {
-                throw new UnauthorizedAccessException("You cannot update this shipment");
+                var keys = _clientSessionService.GetClientApiAndSecretKey();
+
+                if (keys is (string apiKey, string secretKey))
+                {
+                    if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+                    {
+                        throw new UnauthorizedAccessException("You cannot update this shipment");
+                    }
+                }
             }
 
             // Validate shipment rate

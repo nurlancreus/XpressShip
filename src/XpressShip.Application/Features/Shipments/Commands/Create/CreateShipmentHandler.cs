@@ -54,16 +54,28 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
 
         public async Task<ResponseWithData<ShipmentDTO>> Handle(CreateShipmentCommand request, CancellationToken cancellationToken)
         {
-            var (apiKey, secretKey) = _clientSessionService.GetClientApiAndSecretKey();
+            ApiClient? client = null;
 
-            // Validate API client
-            var client = await _apiClientRepository.Table
-                .Include(c => c.Address)
-                    .ThenInclude(a => a.City)
-                        .ThenInclude(c => c.Country)
-                .FirstOrDefaultAsync(a => a.ApiKey == apiKey && a.SecretKey == secretKey && a.IsActive, cancellationToken);
+            var keys = _clientSessionService.GetClientApiAndSecretKey();
 
-            if (client is null) throw new ValidationException("Invalid API credentials or inactive client.");
+
+            if (keys is (string apiKey, string secretKey))
+            {
+                // Validate API client
+                client = await _apiClientRepository.Table
+                    .Include(c => c.Address)
+                        .ThenInclude(a => a.City)
+                            .ThenInclude(c => c.Country)
+                    .FirstOrDefaultAsync(a => a.ApiKey == apiKey && a.SecretKey == secretKey && a.IsActive, cancellationToken);
+
+                if (client is null) throw new ValidationException("Invalid API credentials or inactive client.");
+            }
+            else
+            {
+                // If api client is null then authorized sender must be checked
+
+                // in our case, we don't have it YET!
+            }
 
             // Validate shipment rate
             var shipmentRate = await _shipmentRateRepository.GetByIdAsync(request.ShipmentRateId, true, cancellationToken);
@@ -89,7 +101,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             }
             else
             {
-                originLat = client.Address.Latitude;
+                originLat = client!.Address.Latitude;
                 originLon = client.Address.Longitude;
             }
 
@@ -102,7 +114,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             // Create shipment
             var shipment = Shipment.Create(request.Weight, request.Dimensions, method, request.Note);
             shipment.Rate = shipmentRate;
-            shipment.ApiClientId = client.Id;
+            shipment.ApiClientId = client!.Id;
 
             // Create and validate adresses
             var destinationAddress = Address.Create(request.Destination.PostalCode, request.Destination.Street, destinationGeoInfo.Latitude, destinationGeoInfo.Longitude);
@@ -129,13 +141,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             await _shipmentRepository.AddAsync(shipment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var dto = new ShipmentDTO(shipment);
-
             return new ResponseWithData<ShipmentDTO>
             {
                 IsSuccess = true,
                 Message = "Shipment created successfully",
-                Data = dto
+                Data = new ShipmentDTO(shipment)
             };
         }
     }

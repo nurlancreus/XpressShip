@@ -39,11 +39,17 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
 
             if (shipment is null) throw new ValidationException("Shipment not found.");
 
-            var (apiKey, secretKey) = _clientSessionService.GetClientApiAndSecretKey();
-
-            if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+            if (shipment.ApiClient is not null)
             {
-                throw new UnauthorizedAccessException("You cannot update this shipment");
+                var keys = _clientSessionService.GetClientApiAndSecretKey();
+
+                if (keys is (string apiKey, string secretKey))
+                {
+                    if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+                    {
+                        throw new UnauthorizedAccessException("You cannot get this shipment");
+                    }
+                }
             }
 
             _shipmentRepository.Delete(shipment);
