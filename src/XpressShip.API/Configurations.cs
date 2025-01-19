@@ -5,13 +5,18 @@ using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services;
 using XpressShip.Application.Interfaces.Services.Calculator;
+using XpressShip.Application.Interfaces.Services.Payment;
+using XpressShip.Application.Interfaces.Services.Payment.Stripe;
 using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Options;
+using XpressShip.Application.Options.PaymentGateway;
 using XpressShip.Domain.Validation;
 using XpressShip.Infrastructure.Persistence;
 using XpressShip.Infrastructure.Persistence.Repositories;
 using XpressShip.Infrastructure.Services;
 using XpressShip.Infrastructure.Services.Calculator;
+using XpressShip.Infrastructure.Services.Payment;
+using XpressShip.Infrastructure.Services.Payment.Stripe;
 using XpressShip.Infrastructure.Services.Session;
 using XpressShip.Infrastructure.Services.Validation;
 
@@ -53,6 +58,7 @@ namespace XpressShip.API
             #region Register Repositories
             builder.Services.AddScoped<IApiClientRepository, ApiClientRepository>();
             builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
             builder.Services.AddScoped<IShipmentRateRepository, ShipmentRateRepository>();
             builder.Services.AddScoped<ICountryRepository, CountryRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -64,16 +70,23 @@ namespace XpressShip.API
             builder.Services.AddScoped<IAddressValidationService, AddressValidationService>();
             builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
+
             builder.Services.AddScoped<ICostCalculatorService, CostCalculatorService>();
             builder.Services.AddScoped<IDeliveryCalculatorService, DeliveryCalculatorService>();
+            builder.Services.AddScoped<ITaxCalculatorService, TaxCalculatorService>();
+
+            builder.Services.AddScoped<IPaymentService, PaymentService>();
+            builder.Services.AddScoped<IStripeService, StripeService>();
             #endregion
 
 
             // Register Options pattern
             builder.Services.Configure<APISettings>(APISettings.GeoCodeAPI,
                     builder.Configuration.GetSection("API:GeoCodeAPI"));
+
             builder.Services.Configure<ShippingRatesSettings>(builder.Configuration.GetSection("ShippingRatesSettings"));
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailConfiguration"));
+            builder.Services.Configure<PaymentGatewaySettings>(builder.Configuration.GetSection("PaymentGateways"));
         }
 
         public static void RegisterMiddlewares(this WebApplication app)
