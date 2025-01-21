@@ -37,7 +37,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.UpdateApiKey
                 };
             }
 
-            apiClient.ApiKey = Generator.GenerateApiKey();
+            apiClient.UpdateApiKey();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

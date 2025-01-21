@@ -31,7 +31,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.UpdateSecretKey
                 };
             }
 
-            apiClient.SecretKey = Generator.GenerateSecretKey();
+            apiClient.UpdaterSecretKey();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

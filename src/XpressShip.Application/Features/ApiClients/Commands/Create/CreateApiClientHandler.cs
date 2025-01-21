@@ -36,7 +36,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
 
         public async Task<ResponseWithData<ApiClientDTO>> Handle(CreateApiClientCommand request, CancellationToken cancellationToken)
         {
-            var apiClient = ApiClient.Create(request.CompanyName);
+            var apiClient = ApiClient.Create(request.CompanyName, request.Email);
 
             await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode, true, cancellationToken);
 
@@ -65,13 +65,11 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var dto = new ApiClientDTO(apiClient);
-
             return new ResponseWithData<ApiClientDTO>
             {
                 IsSuccess = true,
                 Message = "Api client created successfully",
-                Data = dto
+                Data = new ApiClientDTO(apiClient)
             };
         }
     }

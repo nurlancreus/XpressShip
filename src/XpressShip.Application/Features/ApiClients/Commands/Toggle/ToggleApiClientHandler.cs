@@ -35,9 +35,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Toggle
                 };
             }
 
-            if (!apiClient.IsActive) apiClient.IsActive = true;
-            else apiClient.IsActive = false;
-
+            apiClient.Toggle();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

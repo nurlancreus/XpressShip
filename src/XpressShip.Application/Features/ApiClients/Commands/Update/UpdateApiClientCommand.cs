@@ -14,6 +14,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
     {
         public Guid? Id { get; set; }
         public string? CompanyName { get; set; }
+        public string? Email { get; set; }
         public AddressCommandDTO? Address { get; set; }
     }
 }

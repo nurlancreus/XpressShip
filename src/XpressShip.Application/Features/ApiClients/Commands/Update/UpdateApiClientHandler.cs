@@ -53,6 +53,11 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
                 apiClient.CompanyName = companyName;
             }
 
+            if (request.Email is string email && email != apiClient.Email)
+            {
+                apiClient.Email = email;
+            }
+
             if (request.Address is not null)
             {
                 await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode, true, cancellationToken);

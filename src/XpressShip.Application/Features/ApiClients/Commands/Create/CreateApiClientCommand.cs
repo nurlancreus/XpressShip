@@ -13,6 +13,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
     public record CreateApiClientCommand : IRequest<ResponseWithData<ApiClientDTO>>
     {
         public string CompanyName { get; set; } = string.Empty;
+        public string Email {  get; set; } = string.Empty;
         public AddressCommandDTO Address { get; set; } = null!;
     }
 }
