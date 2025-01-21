@@ -16,13 +16,11 @@ namespace XpressShip.Application.Features.Payments.Command.Cancel
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
-        private readonly IUnitOfWork _unitOfWork;
 
-        public CancelPaymentHandler(IPaymentRepository paymentRepository, IPaymentService paymentService, IUnitOfWork unitOfWork)
+        public CancelPaymentHandler(IPaymentRepository paymentRepository, IPaymentService paymentService)
         {
             _paymentRepository = paymentRepository;
             _paymentService = paymentService;
-            _unitOfWork = unitOfWork;
         }
 
         public async Task<ResponseWithData<string>> Handle(CancelPaymentCommand request, CancellationToken cancellationToken)
@@ -39,15 +37,11 @@ namespace XpressShip.Application.Features.Payments.Command.Cancel
 
             if (!isCanceled) throw new Exception("Could not cancel the payment");
 
-            payment.Status = PaymentStatus.Canceled;
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
             return new ResponseWithData<string>
             {
                 IsSuccess = true,
                 Data = payment.TransactionId,
-                Message = "Payment Canceled Successfully!"
+                Message = "Payment canceled successfully. It will be processed shortly."
             };
         }
     }

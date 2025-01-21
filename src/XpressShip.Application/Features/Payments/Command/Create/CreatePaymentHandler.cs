@@ -82,7 +82,7 @@ namespace XpressShip.Application.Features.Payments.Command.Create
 
                 IsSuccess = true,
                 Data = new PaymentDTO(shipment.Payment),
-                Message = "Checkout process created successfully!"
+                Message = "Payment process created successfully!"
             };
         }
     }

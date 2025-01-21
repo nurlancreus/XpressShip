@@ -17,13 +17,11 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
-        private readonly IUnitOfWork _unitOfWork;
 
-        public CapturePaymentHandler(IPaymentRepository paymentRepository, IPaymentService paymentService, IUnitOfWork unitOfWork)
+        public CapturePaymentHandler(IPaymentRepository paymentRepository, IPaymentService paymentService)
         {
             _paymentRepository = paymentRepository;
             _paymentService = paymentService;
-            _unitOfWork = unitOfWork;
         }
 
         public async Task<ResponseWithData<string>> Handle(CapturePaymentCommand request, CancellationToken CapturelationToken)
@@ -40,15 +38,11 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
 
             if (!isCaptureed) throw new Exception("Could not capture the payment");
 
-            payment.Status = PaymentStatus.Success;
-
-            await _unitOfWork.SaveChangesAsync(CapturelationToken);
-
             return new ResponseWithData<string>
             {
                 IsSuccess = true,
                 Data = payment.TransactionId,
-                Message = "Payment Captured Successfully!"
+                Message = "Payment captured successfully. It will be processed shortly."
             };
         }
     }

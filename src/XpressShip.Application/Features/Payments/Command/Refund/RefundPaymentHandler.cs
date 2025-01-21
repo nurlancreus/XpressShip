@@ -10,6 +10,9 @@ using XpressShip.Application.Interfaces.Services.Payment;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Enums;
+using XpressShip.Application.Interfaces.Services.Mail.Template;
+using XpressShip.Application.Interfaces.Services.Mail;
+using XpressShip.Application.DTOs.Mail;
 
 namespace XpressShip.Application.Features.Payments.Command.Refund
 {
@@ -17,13 +20,11 @@ namespace XpressShip.Application.Features.Payments.Command.Refund
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
-        private readonly IUnitOfWork _unitOfWork;
 
-        public RefundPaymentHandler(IPaymentRepository paymentRepository, IPaymentService paymentService, IUnitOfWork unitOfWork)
+        public RefundPaymentHandler(IPaymentRepository paymentRepository, IPaymentService paymentService)
         {
             _paymentRepository = paymentRepository;
             _paymentService = paymentService;
-            _unitOfWork = unitOfWork;
         }
 
         public async Task<ResponseWithData<string>> Handle(RefundPaymentCommand request, CancellationToken RefundlationToken)
@@ -40,15 +41,11 @@ namespace XpressShip.Application.Features.Payments.Command.Refund
 
             if (!isRefunded) throw new Exception("Could not refund the payment");
 
-            payment.Status = PaymentStatus.Refunded;
-
-            await _unitOfWork.SaveChangesAsync(RefundlationToken);
-
             return new ResponseWithData<string>
             {
                 IsSuccess = true,
                 Data = payment.TransactionId,
-                Message = "Payment Refunded Successfully!"
+                Message = "Payment refunded successfully. It will be processed shortly."
             };
         }
     }
