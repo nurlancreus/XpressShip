@@ -21,16 +21,12 @@ namespace XpressShip.Infrastructure.Services
 
         public async Task<LocationGeoInfoDTO?> GetLocationGeoInfoByNameAsync(string locationName, CancellationToken cancellationToken = default)
         {
-            // Define the API endpoint
             var url = $"{_apiOptions.BaseUrl}/search?q={locationName}&format=json&limit=1&api_key={_apiOptions.ApiKey}";
 
-            // Send the GET request
             var response = await _httpClient.GetStringAsync(url, cancellationToken);
 
-            // Deserialize the response JSON into a list of objects
             var geoInfoList = JsonSerializer.Deserialize<List<GeoInfo>>(response);
 
-            // Return the first result (or null if no results)
             if (geoInfoList == null || geoInfoList.Count == 0)
             {
                 // implement results pattern 
@@ -39,7 +35,6 @@ namespace XpressShip.Infrastructure.Services
 
             var geoInfo = geoInfoList[0];
 
-            // Map the response to the CountryGeoInfo DTO
             return new LocationGeoInfoDTO
             {
                 Name = geoInfo.DisplayName,
