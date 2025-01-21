@@ -18,7 +18,6 @@ using XpressShip.Domain.Exceptions;
 using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Application.DTOs;
 using XpressShip.Domain.Extensions;
-using XpressShip.Application.Interfaces.Services.Calculator;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
@@ -29,18 +28,16 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
         private readonly ICountryRepository _countryRepository;
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IShipmentRateRepository _shipmentRateRepository;
-        private readonly ICostCalculatorService _calculatorService;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateShipmentDetailsHandler(IClientSessionService clientSessionService, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, ICostCalculatorService calculatorService, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateShipmentDetailsHandler(IClientSessionService clientSessionService, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
         {
             _clientSessionService = clientSessionService;
             _addressValidationService = addressValidationService;
             _countryRepository = countryRepository;
             _shipmentRepository = shipmentRepository;
             _shipmentRateRepository = shipmentRateRepository;
-            _calculatorService = calculatorService;
             _geoInfoService = geoInfoService;
             _unitOfWork = unitOfWork;
         }
@@ -129,13 +126,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
             if (request.Weight is double weight && shipment.Weight != weight)
             {
-
                 shipment.Weight = weight;
             }
 
             if (request.Dimensions is string dimensions && shipment.Dimensions != dimensions)
             {
-
                 shipment.Dimensions = dimensions;
             }
 
@@ -147,7 +142,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             }
 
             // Calculate final cost
-            shipment.Cost = _calculatorService.CalculateShippingCost(shipment);
+            shipment.Cost = shipment.CalculateShippingCost();
 
             // Persist shipment
             await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -7,7 +7,6 @@ using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services;
-using XpressShip.Application.Interfaces.Services.Calculator;
 using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Entities;
@@ -26,7 +25,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IShipmentRateRepository _shipmentRateRepository;
         private readonly IApiClientRepository _apiClientRepository;
-        private readonly ICostCalculatorService _calculatorService;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
@@ -35,7 +33,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             IShipmentRepository shipmentRepository,
             IShipmentRateRepository shipmentRateRepository,
             IApiClientRepository apiClientRepository,
-            ICostCalculatorService calculatorService,
             IGeoInfoService geoInfoService,
             IAddressValidationService addressValidationService,
             ICountryRepository countryRepository,
@@ -45,7 +42,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             _shipmentRepository = shipmentRepository;
             _shipmentRateRepository = shipmentRateRepository;
             _apiClientRepository = apiClientRepository;
-            _calculatorService = calculatorService;
             _geoInfoService = geoInfoService;
             _addressValidationService = addressValidationService;
             _countryRepository = countryRepository;
@@ -135,7 +131,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             shipment.DestinationAddress = destinationAddress;
 
             // Calculate final cost
-            shipment.Cost = _calculatorService.CalculateShippingCost(shipment);
+            shipment.Cost = shipment.CalculateShippingCost();
 
             // Persist shipment
             await _shipmentRepository.AddAsync(shipment, cancellationToken);
