@@ -5,7 +5,7 @@ namespace XpressShip.API.Endpoints
     {
         public static void RegisterShipmentEndpoints(this IEndpointRouteBuilder routes)
         {
-            var shipments = routes.MapGroup("/api/v1/shipments");
+            var shipments = routes.MapGroup("/api/shipments");
 
             shipments.MapGet("", () => { return Results.NotFound(); });
 

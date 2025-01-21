@@ -16,7 +16,7 @@ namespace XpressShip.API.Endpoints
     {
         public static void RegisterApiClientEndpoints(this IEndpointRouteBuilder routes)
         {
-            var clients = routes.MapGroup("/api/v1/clients");
+            var clients = routes.MapGroup("/api/clients");
 
             clients.MapGet("", async (ISender sender, CancellationToken cancellationToken) =>
             {
