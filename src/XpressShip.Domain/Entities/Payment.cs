@@ -35,5 +35,13 @@ namespace XpressShip.Domain.Entities
 
         }
 
+        public void MakeComplete() => Status = PaymentStatus.Success;
+        public void MakePending() => Status = PaymentStatus.Pending;
+        public void MakeCanceled() => Status = PaymentStatus.Canceled;
+        public void MakeFailed() => Status = PaymentStatus.Failed;
+        public void MakeRefunded() => Status = PaymentStatus.Refunded;
+
+        public void FromDebitCard() => Method = PaymentMethod.DebitCard;
+
     }
 }

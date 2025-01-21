@@ -17,7 +17,6 @@ namespace XpressShip.Domain.Validation
                 { "Turkey", (["Ankara", "Istanbul", "Izmir"], @"^\d{5}$") }
             };
 
-        // Validate dimensions in the format LxWxH
         public static bool ValidateDimensions(string dimensions, bool throwException = true)
         {
             bool isValid = new Regex(DimensionPattern).IsMatch(dimensions);
@@ -27,7 +26,6 @@ namespace XpressShip.Domain.Validation
             return isValid;
         }
 
-        // Validate that the volume is within allowed range
         public static bool ValidateVolume(double volume, ShipmentRate rate, bool throwException = true)
         {
             bool isValid = volume > 0 && rate.MinVolume <= volume && volume <= rate.MaxVolume;
@@ -37,7 +35,6 @@ namespace XpressShip.Domain.Validation
             return isValid;
         }
 
-        // Validate that the distance is within allowed range
         public static bool ValidateDistance(double distance, ShipmentRate rate, bool throwException = true)
         {
             bool isValid = distance > 0 && rate.MinDistance <= distance && distance <= rate.MaxDistance;
@@ -48,7 +45,6 @@ namespace XpressShip.Domain.Validation
             return isValid;
         }
 
-        // Validate that the weight is within allowed range
         public static bool ValidateWeight(double weight, ShipmentRate rate, bool throwException = true)
         {
             bool isValid = weight > 0 && rate.MinWeight <= weight && weight <= rate.MaxWeight;
@@ -56,6 +52,29 @@ namespace XpressShip.Domain.Validation
                 throw new ValidationException("Weight is out of the allowed range.");
 
             return isValid;
+        }
+
+        public static bool IsValidLatitude(double latitude, bool throwException = true)
+        {
+            bool isValid = latitude is >= -90 and <= 90;
+
+            if (!isValid && throwException)
+                throw new ValidationException($"Invalid latitude: {latitude}. Latitude must be between -90 and 90 degrees.");
+
+            return isValid;
+
+        }
+
+        public static bool IsValidLongitude(double longitude, bool throwException = true)
+        {
+
+            bool isValid = longitude is >= -180 and <= 180;
+
+            if (!isValid && throwException)
+                throw new ValidationException($"Invalid longitude: {longitude}. Longitude must be between -180 and 180 degrees.");
+
+            return isValid;
+
         }
     }
 }

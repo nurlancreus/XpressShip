@@ -10,8 +10,6 @@ namespace XpressShip.Domain.Enums
     {
         Pending,
         Shipped,
-        InTransit,
-        OutForDelivery,
         Delivered,
         Failed,
         Canceled
