@@ -4,7 +4,8 @@ using XpressShip.Application.Behaviours;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services;
-using XpressShip.Application.Interfaces.Services.Calculator;
+using XpressShip.Application.Interfaces.Services.Mail;
+using XpressShip.Application.Interfaces.Services.Mail.Template;
 using XpressShip.Application.Interfaces.Services.Payment;
 using XpressShip.Application.Interfaces.Services.Payment.Stripe;
 using XpressShip.Application.Interfaces.Services.Session;
@@ -14,7 +15,8 @@ using XpressShip.Domain.Validation;
 using XpressShip.Infrastructure.Persistence;
 using XpressShip.Infrastructure.Persistence.Repositories;
 using XpressShip.Infrastructure.Services;
-using XpressShip.Infrastructure.Services.Calculator;
+using XpressShip.Infrastructure.Services.Mail;
+using XpressShip.Infrastructure.Services.Mail.Template;
 using XpressShip.Infrastructure.Services.Payment;
 using XpressShip.Infrastructure.Services.Payment.Stripe;
 using XpressShip.Infrastructure.Services.Session;
@@ -71,9 +73,12 @@ namespace XpressShip.API
             builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
 
-            builder.Services.AddScoped<ICostCalculatorService, CostCalculatorService>();
-            builder.Services.AddScoped<IDeliveryCalculatorService, DeliveryCalculatorService>();
-            builder.Services.AddScoped<ITaxCalculatorService, TaxCalculatorService>();
+            builder.Services.AddScoped<IDistanceService, DistanceService>();
+
+            builder.Services.AddScoped<IPaymentMailTemplatesService, PaymentMailTemplatesService>();
+            builder.Services.AddScoped<IShipmentMailTemplatesService, ShipmentMailTemplatesService>();
+
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
             builder.Services.AddScoped<IPaymentService, PaymentService>();
             builder.Services.AddScoped<IStripeService, StripeService>();
