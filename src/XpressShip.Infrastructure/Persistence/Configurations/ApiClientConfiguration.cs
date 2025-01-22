@@ -16,6 +16,10 @@ namespace XpressShip.Infrastructure.Persistence.Configurations
             builder.HasKey(c => c.Id);
 
             builder
+                .HasIndex(c => c.Email)
+                .IsUnique();
+
+            builder
                 .HasIndex(c => c.ApiKey)
                 .IsUnique();
 

@@ -42,7 +42,7 @@ namespace XpressShip.Infrastructure.Services.Mail.Template
             ";
         }
 
-        public string GenerateRefundNotificationEmail(string transactionId, string recipientName, decimal refundedAmount, string currency, DateTime refundDate)
+        public string GeneratePaymentRefundedEmail(string transactionId, string recipientName, decimal refundedAmount, string currency, DateTime refundDate)
         {
             return $@"
                 <html>
