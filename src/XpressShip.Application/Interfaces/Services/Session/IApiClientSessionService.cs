@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace XpressShip.Application.Interfaces.Services.Session
 {
-    public interface IClientSessionService
+    public interface IApiClientSessionService
     {
         (string apiKey, string secretKey)? GetClientApiAndSecretKey(bool throwException = true);
         string? GetApiKey(bool throwException = true);

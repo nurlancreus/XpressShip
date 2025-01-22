@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace XpressShip.Application.Interfaces.Services.Session
 {
-    public interface ISessionService : IClientSessionService
+    public interface ISessionService : IApiClientSessionService
     {
 
     }
