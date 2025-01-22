@@ -21,6 +21,7 @@ using XpressShip.Infrastructure.Services.Payment;
 using XpressShip.Infrastructure.Services.Payment.Stripe;
 using XpressShip.Infrastructure.Services.Session;
 using XpressShip.Infrastructure.Services.Validation;
+using XpressShip.Infrastructure.SignalR;
 
 namespace XpressShip.API
 {
@@ -47,6 +48,9 @@ namespace XpressShip.API
                 .EnableSensitiveDataLogging();
             });
 
+            // Register SignalR
+            builder.Services.RegisterSignalRServices();
+
             // Register MediatR
             builder.Services.AddMediatR(config =>
             {
@@ -68,7 +72,7 @@ namespace XpressShip.API
 
             // Register Services
             #region Register Client Services
-            builder.Services.AddScoped<IClientSessionService, SessionService>();
+            builder.Services.AddScoped<IApiClientSessionService, SessionService>();
             builder.Services.AddScoped<IAddressValidationService, AddressValidationService>();
             builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
@@ -114,6 +118,8 @@ namespace XpressShip.API
             app.UseAuthorization();
 
             app.UseMiddleware<ApiKeyMiddleware>();
+
+            app.MapHubs();
         }
     }
 
