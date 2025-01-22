@@ -17,7 +17,7 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
     public class GetAllShipmentsHandler : IRequestHandler<GetAllShipmentsQuery, ResponseWithData<IEnumerable<ShipmentDTO>>>
     {
         private readonly IShipmentRepository _shipmentRepository;
-
+        private readonly bool IsAdmin = true;
         public GetAllShipmentsHandler(IShipmentRepository shipmentRepository)
         {
             _shipmentRepository = shipmentRepository;
@@ -25,6 +25,8 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
 
         public async Task<ResponseWithData<IEnumerable<ShipmentDTO>>> Handle(GetAllShipmentsQuery request, CancellationToken cancellationToken)
         {
+            if (!IsAdmin) throw new UnauthorizedAccessException("You're not authorized to get payment details!");
+
             var shipments = _shipmentRepository.Table
                 .Include(s => s.Rate)
                 .Include(s => s.OriginAddress)
@@ -56,7 +58,7 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
             // Filter by Origin Location
             if (request.OriginCountry is string originCountry)
             {
-                var origins = shipments.Select(s => new { country = (s.OriginAddress ?? s.ApiClient.Address).City.Country.Name, city = (s.OriginAddress ?? s.ApiClient.Address).City.Name });
+                var origins = shipments.Select(s => new { country = (s.OriginAddress ?? s.ApiClient!.Address).City.Country.Name, city = (s.OriginAddress ?? s.ApiClient!.Address).City.Name });
 
                 if (request.OriginCity is string originCity)
                 {
@@ -83,14 +85,10 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
                 }
             }
 
-            var dtos = await shipments
-                .Select(s => new ShipmentDTO(s))
-                .ToListAsync(cancellationToken);
-
             return new ResponseWithData<IEnumerable<ShipmentDTO>>
             {
                 IsSuccess = true,
-                Data = dtos,
+                Data = await shipments.Select(s => new ShipmentDTO(s)).ToListAsync(cancellationToken),
                 Message = "Shipments retrieved successfully!"
             };
         }

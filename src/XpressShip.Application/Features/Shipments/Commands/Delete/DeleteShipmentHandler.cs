@@ -15,11 +15,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
 {
     public class DeleteShipmentHandler : IRequestHandler<DeleteShipmentCommand, BaseResponse>
     {
-        private readonly IClientSessionService _clientSessionService;
+        private readonly IApiClientSessionService _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteShipmentHandler(IClientSessionService clientSessionService, IShipmentRepository shipmentRepository, IUnitOfWork unitOfWork)
+        public DeleteShipmentHandler(IApiClientSessionService clientSessionService, IShipmentRepository shipmentRepository, IUnitOfWork unitOfWork)
         {
             _clientSessionService = clientSessionService;
             _shipmentRepository = shipmentRepository;

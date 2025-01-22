@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,15 +22,17 @@ namespace XpressShip.Application.Features.ApiClients.Queries.GetAll
 
         public async Task<ResponseWithData<IEnumerable<ApiClientDTO>>> Handle(GetAllApiClientsQuery request, CancellationToken cancellationToken)
         {
-            var clients = await _apiClientRepository.GetAllAsync(false, cancellationToken);
-
-            var dtos = clients.Select(client => new ApiClientDTO(client));
+            var clients = _apiClientRepository.Table
+                                .Include(c => c.Address)
+                                .Include(c => c.Shipments)
+                                    .ThenInclude(s => s.Rate)
+                                .AsNoTracking();
 
             return new ResponseWithData<IEnumerable<ApiClientDTO>>
             {
                 IsSuccess = true,
+                Data = await clients.Select(client => new ApiClientDTO(client)).ToListAsync(cancellationToken),
                 Message = "Api clients retrieved successfully",
-                Data = dtos
             };
         }
     }

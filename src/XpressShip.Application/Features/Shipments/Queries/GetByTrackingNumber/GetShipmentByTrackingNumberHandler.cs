@@ -15,10 +15,10 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetByTrackingNumber
 {
     public class GetShipmentByTrackingNumberHandler : IRequestHandler<GetShipmentByTrackingNumberQuery, ResponseWithData<ShipmentDTO>>
     {
-        private readonly IClientSessionService _clientSessionService;
+        private readonly IApiClientSessionService _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
 
-        public GetShipmentByTrackingNumberHandler(IClientSessionService clientSessionService, IShipmentRepository shipmentRepository)
+        public GetShipmentByTrackingNumberHandler(IApiClientSessionService clientSessionService, IShipmentRepository shipmentRepository)
         {
             _clientSessionService = clientSessionService;
             _shipmentRepository = shipmentRepository;

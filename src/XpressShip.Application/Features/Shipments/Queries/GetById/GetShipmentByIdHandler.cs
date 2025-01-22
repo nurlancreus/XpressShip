@@ -15,10 +15,10 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetById
 {
     public class GetShipmentByIdHandler : IRequestHandler<GetShipmentByIdQuery, ResponseWithData<ShipmentDTO>>
     {
-        private readonly IClientSessionService _clientSessionService;
+        private readonly IApiClientSessionService _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
 
-        public GetShipmentByIdHandler(IClientSessionService clientSessionService, IShipmentRepository shipmentRepository)
+        public GetShipmentByIdHandler(IApiClientSessionService clientSessionService, IShipmentRepository shipmentRepository)
         {
             _clientSessionService = clientSessionService;
             _shipmentRepository = shipmentRepository;

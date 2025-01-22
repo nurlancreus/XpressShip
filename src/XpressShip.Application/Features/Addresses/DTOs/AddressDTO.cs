@@ -22,8 +22,8 @@ namespace XpressShip.Application.Features.Addresses.DTOs
         public DateTime CreatedAt { get; set; }
 
         public ApiClientDTO? Client { get; set; }
-        public ICollection<ShipmentDTO> ShipmentsOrigin { get; set; } = [];
-        public ICollection<ShipmentDTO> ShipmentsDestination { get; set; } = [];
+        public ICollection<ShipmentDTO?> ShipmentsOrigin { get; set; } = [];
+        public ICollection<ShipmentDTO?> ShipmentsDestination { get; set; } = [];
         public AddressDTO() { }
         public AddressDTO(Address address)
         {
@@ -36,8 +36,8 @@ namespace XpressShip.Application.Features.Addresses.DTOs
             Longitude = address.Longitude;
             CreatedAt = address.CreatedAt;
             Client = address.Client is not null ? new ApiClientDTO(address.Client) : null;
-            ShipmentsOrigin = address.ShipmentsOrigin.Select(s => new ShipmentDTO(s)).ToList();
-            ShipmentsDestination = address.ShipmentsDestination.Select(s => new ShipmentDTO(s)).ToList();
+            ShipmentsOrigin = address.ShipmentsOrigin.Select(s => s != null ? new ShipmentDTO(s) : null).ToList();
+            ShipmentsDestination = address.ShipmentsDestination.Select(s => s != null ? new ShipmentDTO(s) : null).ToList();
         }
     }
 }

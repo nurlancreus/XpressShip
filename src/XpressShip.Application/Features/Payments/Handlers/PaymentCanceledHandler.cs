@@ -11,6 +11,8 @@ using XpressShip.Application.Interfaces.Services.Mail;
 using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Notifications.Payment;
+using XpressShip.Application.Interfaces.Hubs;
+using XpressShip.Domain.Enums;
 
 namespace XpressShip.Application.Features.Payments.Handlers
 {
@@ -19,13 +21,15 @@ namespace XpressShip.Application.Features.Payments.Handlers
         private readonly IEmailService _emailService;
         private readonly IPaymentMailTemplatesService _paymentMailTemplatesService;
         private readonly IPaymentRepository _paymentRepository;
+        private readonly IPaymentHubService _paymentHubService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public PaymentCanceledHandler(IEmailService emailService, IPaymentMailTemplatesService paymentMailTemplatesService, IPaymentRepository paymentRepository, IUnitOfWork unitOfWork)
+        public PaymentCanceledHandler(IEmailService emailService, IPaymentMailTemplatesService paymentMailTemplatesService, IPaymentRepository paymentRepository, IPaymentHubService paymentHubService, IUnitOfWork unitOfWork)
         {
             _emailService = emailService;
             _paymentMailTemplatesService = paymentMailTemplatesService;
             _paymentRepository = paymentRepository;
+            _paymentHubService = paymentHubService;
             _unitOfWork = unitOfWork;
         }
 
@@ -51,6 +55,10 @@ namespace XpressShip.Application.Features.Payments.Handlers
             var body = _paymentMailTemplatesService.GeneratePaymentCanceledEmail(payment.TransactionId, recipientDetails.Name);
 
             await _emailService.SendEmailAsync(recipientDetails, "Payment Canceled", body);
+
+            var identifier = payment.Shipment.ApiClient?.ApiKey; // if null then take from sender
+
+            await _paymentHubService.PaymentCanceledMessageAsync(identifier!, $"Payment with transaction ID {payment.TransactionId} is canceled!", UserType.ApiClient, cancellationToken);
         }
     }
 }

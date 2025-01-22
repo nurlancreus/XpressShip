@@ -11,6 +11,8 @@ using XpressShip.Application.Interfaces.Services.Mail;
 using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Notifications.Payment;
+using XpressShip.Application.Interfaces.Hubs;
+using XpressShip.Domain.Enums;
 
 namespace XpressShip.Application.Features.Payments.Handlers
 {
@@ -19,13 +21,15 @@ namespace XpressShip.Application.Features.Payments.Handlers
         private readonly IEmailService _emailService;
         private readonly IPaymentMailTemplatesService _paymentMailTemplatesService;
         private readonly IPaymentRepository _paymentRepository;
+        private readonly IPaymentHubService _paymentHubService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public PaymentRefundedHandler(IEmailService emailService, IPaymentMailTemplatesService paymentMailTemplatesService, IPaymentRepository paymentRepository, IUnitOfWork unitOfWork)
+        public PaymentRefundedHandler(IEmailService emailService, IPaymentMailTemplatesService paymentMailTemplatesService, IPaymentRepository paymentRepository, IPaymentHubService paymentHubService, IUnitOfWork unitOfWork)
         {
             _emailService = emailService;
             _paymentMailTemplatesService = paymentMailTemplatesService;
             _paymentRepository = paymentRepository;
+            _paymentHubService = paymentHubService;
             _unitOfWork = unitOfWork;
         }
 
@@ -48,9 +52,13 @@ namespace XpressShip.Application.Features.Payments.Handlers
                 Name = payment.Shipment.ApiClient.CompanyName,
             };
 
-            var body = _paymentMailTemplatesService.GenerateRefundNotificationEmail(payment.TransactionId, recipientDetails.Name, payment.Shipment.Cost, payment.Currency.ToString(), DateTime.UtcNow);
+            var body = _paymentMailTemplatesService.GeneratePaymentRefundedEmail(payment.TransactionId, recipientDetails.Name, payment.Shipment.Cost, payment.Currency.ToString(), DateTime.UtcNow);
 
             await _emailService.SendEmailAsync(recipientDetails, "Payment Refunded", body);
+
+            var identifier = payment.Shipment.ApiClient?.ApiKey; // if null then take from sender
+
+            await _paymentHubService.PaymentRefundedMessageAsync(identifier!, $"Payment with transaction ID {payment.TransactionId} is refunded successfully!", UserType.ApiClient, cancellationToken);
         }
     }
 }

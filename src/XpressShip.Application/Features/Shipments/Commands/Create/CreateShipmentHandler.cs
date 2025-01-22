@@ -19,7 +19,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
 {
     public class CreateShipmentHandler : IRequestHandler<CreateShipmentCommand, ResponseWithData<ShipmentDTO>>
     {
-        private readonly IClientSessionService _clientSessionService;
+        private readonly IApiClientSessionService _clientSessionService;
         private readonly IAddressValidationService _addressValidationService;
         private readonly ICountryRepository _countryRepository;
         private readonly IShipmentRepository _shipmentRepository;
@@ -29,7 +29,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateShipmentHandler(
-            IClientSessionService clientSessionService,
+            IApiClientSessionService clientSessionService,
             IShipmentRepository shipmentRepository,
             IShipmentRateRepository shipmentRateRepository,
             IApiClientRepository apiClientRepository,

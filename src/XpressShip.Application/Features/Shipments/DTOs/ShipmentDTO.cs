@@ -17,9 +17,9 @@ namespace XpressShip.Application.Features.Shipments.DTOs
     {
         public Guid Id { get; set; }
         public string TrackingNumber { get; set; } = string.Empty;
-        public ShipmentStatus Status { get; set; }
+        public string Status { get; set; } = string.Empty;
         public ShipmentRateDTO? Rate { get; set; }
-        public DateTime EstimatedDate { get; set; }
+        public DateTime? EstimatedDate { get; set; }
         public decimal Cost { get; set; }
         public PaymentDTO? Payment { get; set; }
         public AddressDTO? OriginAddress { get; set; }
@@ -32,8 +32,8 @@ namespace XpressShip.Application.Features.Shipments.DTOs
         {
             Id = shipment.Id;
             TrackingNumber = shipment.TrackingNumber;
-            Status = shipment.Status;
-            Rate = new ShipmentRateDTO(shipment.Rate);
+            Status = shipment.Status.ToString();
+            Rate = shipment.Rate is not null ? new ShipmentRateDTO(shipment.Rate) : null;
             Cost = shipment.Cost;
             EstimatedDate = shipment.EstimatedDate;
             OriginAddress = shipment.OriginAddress is not null ? new AddressDTO(shipment.OriginAddress) : ApiClient?.Address;

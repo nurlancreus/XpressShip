@@ -23,7 +23,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
     public class UpdateShipmentDetailsHandler : IRequestHandler<UpdateShipmentDetailsCommand, ResponseWithData<ShipmentDTO>>
     {
-        private readonly IClientSessionService _clientSessionService;
+        private readonly IApiClientSessionService _clientSessionService;
         private readonly IAddressValidationService _addressValidationService;
         private readonly ICountryRepository _countryRepository;
         private readonly IShipmentRepository _shipmentRepository;
@@ -31,7 +31,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateShipmentDetailsHandler(IClientSessionService clientSessionService, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateShipmentDetailsHandler(IApiClientSessionService clientSessionService, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
         {
             _clientSessionService = clientSessionService;
             _addressValidationService = addressValidationService;
