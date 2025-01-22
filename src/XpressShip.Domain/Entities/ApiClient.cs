@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using System.Text;
 using XpressShip.Domain;
 using XpressShip.Domain.Entities.Base;
 
@@ -8,12 +9,12 @@ namespace XpressShip.Domain.Entities
     {
         public string CompanyName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string ApiKey { get; set; } = string.Empty;  // Public API Key
-        public string SecretKey { get; set; } = string.Empty;  // Secret Key for HMAC
+        public string ApiKey { get; set; } = string.Empty; 
+        public string SecretKey { get; set; } = string.Empty;  
         public bool IsActive { get; set; } = true;
-        public Address Address { get; set; } = null!;  // Navigation Property to Address
+        public Address Address { get; set; } = null!; 
 
-        public ICollection<Shipment> Shipments { get; set; } = []; // Navigation Property to Shipments
+        public ICollection<Shipment> Shipments { get; set; } = []; 
 
         private ApiClient()
         {
@@ -44,12 +45,20 @@ namespace XpressShip.Domain.Entities
 
         private static string GenerateApiKey()
         {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));  // 256-bit key
+            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)); 
+            return HashKey(key);
         }
 
         private static string GenerateSecretKey()
         {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));  // 512-bit key
+            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)); 
+            return HashKey(key);
+        }
+        private static string HashKey(string key)
+        {
+            using var hmac = new HMACSHA256();
+            var hashedKey = hmac.ComputeHash(Encoding.UTF8.GetBytes(key));
+            return Convert.ToBase64String(hashedKey);
         }
     }
 }

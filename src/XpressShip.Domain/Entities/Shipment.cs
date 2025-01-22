@@ -14,7 +14,7 @@ namespace XpressShip.Domain.Entities
     {
         public string TrackingNumber { get; set; } = string.Empty;
         public ShipmentStatus Status { get; set; }
-        public DateTime EstimatedDate { get; set; }
+        public DateTime? EstimatedDate { get; set; }
         public ShipmentMethod Method { get; set; }
         public double Weight { get; set; }
         public string Dimensions { get; set; } = string.Empty;
@@ -65,7 +65,7 @@ namespace XpressShip.Domain.Entities
         public void MakeCanceled()
         {
             Status = ShipmentStatus.Canceled;
-            EstimatedDate = DateTime.MinValue;
+            EstimatedDate = null;
         }
 
         public void MakeShipped()
@@ -77,13 +77,13 @@ namespace XpressShip.Domain.Entities
         public void MakeFailed()
         {
             Status = ShipmentStatus.Failed;
-            EstimatedDate = DateTime.MinValue;
+            EstimatedDate = null;
         }
 
         public void MakeDelivered()
         {
             Status = ShipmentStatus.Delivered;
-            EstimatedDate = DateTime.MinValue;
+            EstimatedDate = null;
         }
 
 
