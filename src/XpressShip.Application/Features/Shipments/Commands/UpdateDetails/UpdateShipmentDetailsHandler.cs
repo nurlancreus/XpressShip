@@ -18,10 +18,12 @@ using XpressShip.Domain.Exceptions;
 using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Application.DTOs;
 using XpressShip.Domain.Extensions;
+using XpressShip.Application.Abstractions;
+using XpressShip.Domain.Abstractions;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
-    public class UpdateShipmentDetailsHandler : IRequestHandler<UpdateShipmentDetailsCommand, ResponseWithData<ShipmentDTO>>
+    public class UpdateShipmentDetailsHandler : ICommandHandler<UpdateShipmentDetailsCommand, ShipmentDTO>
     {
         private readonly IApiClientSessionService _clientSessionService;
         private readonly IAddressValidationService _addressValidationService;
@@ -42,7 +44,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ResponseWithData<ShipmentDTO>> Handle(UpdateShipmentDetailsCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ShipmentDTO>> Handle(UpdateShipmentDetailsCommand request, CancellationToken cancellationToken)
         {
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
@@ -52,7 +54,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                                     .ThenInclude(c => c!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) throw new ValidationException("Shipment not found.");
+            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (shipment.ApiClient is not null)
             {
@@ -62,7 +64,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                 {
                     if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
                     {
-                        throw new UnauthorizedAccessException("You cannot update this shipment");
+                        return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
                     }
                 }
             }
@@ -74,7 +76,9 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             {
                 shipmentRate = await _shipmentRateRepository.GetByIdAsync(rateId, true, cancellationToken);
 
-                if (shipmentRate is null) throw new ValidationException("Shipment rate not found.");
+                if (shipmentRate is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipmentRate)));
+
+                shipment.Rate = shipmentRate;
             }
 
 
@@ -134,6 +138,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                 shipment.Dimensions = dimensions;
             }
 
+            if (request.Note is string note && shipment.Note != note)
+            {
+                shipment.Note = note;
+            }
+
             if (request.Method is string method)
             {
                 var shipmentMethod = method.EnsureEnumValueDefined<ShipmentMethod>();
@@ -141,18 +150,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                 if (shipmentMethod != shipment.Method) shipment.Method = shipmentMethod;
             }
 
-            // Calculate final cost
             shipment.Cost = shipment.CalculateShippingCost();
 
-            // Persist shipment
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ResponseWithData<ShipmentDTO>
-            {
-                IsSuccess = true,
-                Message = "Shipment updated successfully",
-                Data = new ShipmentDTO(shipment)
-            };
+            return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
         }
     }
 }

@@ -5,15 +5,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Exceptions;
 
 namespace XpressShip.Application.Features.Shipments.Commands.Delete
 {
-    public class DeleteShipmentHandler : IRequestHandler<DeleteShipmentCommand, BaseResponse>
+    public class DeleteShipmentHandler : ICommandHandler<DeleteShipmentCommand>
     {
         private readonly IApiClientSessionService _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
@@ -26,7 +28,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponse> Handle(DeleteShipmentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<Unit>> Handle(DeleteShipmentCommand request, CancellationToken cancellationToken)
         {
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
@@ -37,7 +39,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
                                     .ThenInclude(c => c.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) throw new ValidationException("Shipment not found.");
+            if (shipment is null) return Result<Unit>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (shipment.ApiClient is not null)
             {
@@ -47,7 +49,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
                 {
                     if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
                     {
-                        throw new UnauthorizedAccessException("You cannot get this shipment");
+                        return Result<Unit>.Failure(Error.UnauthorizedError("You are not authorized to delete this shipment"));
                     }
                 }
             }
@@ -56,11 +58,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new BaseResponse
-            {
-                IsSuccess = true,
-                Message = "Shipment deleted successfully!"
-            };
+            return Result<Unit>.Success(Unit.Value);
         }
     }
 }

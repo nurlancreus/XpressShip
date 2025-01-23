@@ -7,8 +7,10 @@ using XpressShip.Application.Features.ApiClients.Commands.Toggle;
 using XpressShip.Application.Features.ApiClients.Commands.Update;
 using XpressShip.Application.Features.ApiClients.Commands.UpdateApiKey;
 using XpressShip.Application.Features.ApiClients.Commands.UpdateSecretKey;
+using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.ApiClients.Queries.Get;
 using XpressShip.Application.Features.ApiClients.Queries.GetAll;
+using XpressShip.Domain.Abstractions;
 
 namespace XpressShip.API.Endpoints
 {
@@ -18,62 +20,81 @@ namespace XpressShip.API.Endpoints
         {
             var clients = routes.MapGroup("/api/clients");
 
-            clients.MapGet("", async (ISender sender, CancellationToken cancellationToken) =>
+            clients.MapGet("", async (ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var allClients = await sender.Send(new GetAllApiClientsQuery(), cancellationToken);
-                return Results.Ok(allClients);
+                var result = await sender.Send(new GetAllApiClientsQuery(), cancellationToken);
+
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => error.HandleError(context));
             });
 
-            clients.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+            clients.MapGet("/{id:guid}", async (Guid id, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var response = await sender.Send(new GetApiClientByIdQuery { Id = id }, cancellationToken);
+                var result = await sender.Send(new GetApiClientByIdQuery { Id = id }, cancellationToken);
 
-                return response.IsSuccess ? Results.Ok(response) : Results.NotFound(response);
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => error.HandleError(context));
             });
 
             clients
-                .MapPost("", async ([FromBody] CreateApiClientCommand request, ISender sender, CancellationToken cancellationToken) =>
+                .MapPost("", async ([FromBody] CreateApiClientCommand request, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var response = await sender.Send(request, cancellationToken);
+                var result = await sender.Send(request, cancellationToken);
 
-                return response.IsSuccess ? Results.Created($"/api/v1/clients/{response.Data?.Id}", response) : Results.BadRequest(response);
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => error.HandleError(context));
             });
 
-            clients.MapPatch("/{id:guid}", async (Guid id, [FromBody] UpdateApiClientCommand request, ISender sender, CancellationToken cancellationToken) =>
+            clients.MapPatch("/{id:guid}", async (Guid id, [FromBody] UpdateApiClientCommand request, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
                 request.Id = id;
-                var response = await sender.Send(request, cancellationToken);
+                var result = await sender.Send(request, cancellationToken);
 
-                return response.IsSuccess ? Results.Ok(response) : Results.BadRequest(response);
+                return result.Match(
+                     onSuccess: (value) => Results.Ok(value),
+                     onFailure: error => error.HandleError(context));
             });
 
-            clients.MapPatch("/{id:guid}/toggle", async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+            clients.MapPatch("/{id:guid}/toggle", async (Guid id, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var response = await sender.Send(new ToggleApiClientCommand { Id = id }, cancellationToken);
+                var result = await sender.Send(new ToggleApiClientCommand { Id = id }, cancellationToken);
 
-                return response.IsSuccess ? Results.Ok(response) : Results.NotFound(response);
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => error.HandleError(context));
             });
 
-            clients.MapDelete("/{id:guid}", async (Guid id, ISender service, CancellationToken cancellationToken) =>
+            clients.MapDelete("/{id:guid}", async (Guid id, ISender service, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var response = await service.Send(new DeleteApiClientCommand { Id = id }, cancellationToken);
+                var result = await service.Send(new DeleteApiClientCommand { Id = id }, cancellationToken);
 
-                return response.IsSuccess ? Results.Ok(response) : Results.NotFound(response);
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => Results.Problem());
             });
 
 
-            clients.MapPatch("/{id:guid}/api-key", async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+            clients.MapPatch("/{id:guid}/api-key", async (Guid id, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var response = await sender.Send(new UpdateApiKeyCommand { Id = id }, cancellationToken);
+                var result = await sender.Send(new UpdateApiKeyCommand { Id = id }, cancellationToken);
 
-                return response.IsSuccess ? Results.Ok(response) : Results.NotFound(response);
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => error.HandleError(context));
+
             }).WithMetadata(new AuthorizeApiClientAttribute());
 
-            clients.MapPatch("/{id:guid}/secret-key", async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+            clients.MapPatch("/{id:guid}/secret-key", async (Guid id, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
-                var response = await sender.Send(new UpdateSecretKeyCommand { Id = id }, cancellationToken);
+                var result = await sender.Send(new UpdateSecretKeyCommand { Id = id }, cancellationToken);
 
-                return response.IsSuccess ? Results.Ok(response) : Results.NotFound(response);
+                return result.Match(
+                    onSuccess: (value) => Results.Ok(value),
+                    onFailure: error => error.HandleError(context));
+
             }).WithMetadata(new AuthorizeApiClientAttribute());
         }
     }

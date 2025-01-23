@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Application.Features.Shipments.DTOs;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 
 namespace XpressShip.Application.Features.ApiClients.DTOs

@@ -5,15 +5,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Exceptions;
 
 namespace XpressShip.Application.Features.Shipments.Queries.GetById
 {
-    public class GetShipmentByIdHandler : IRequestHandler<GetShipmentByIdQuery, ResponseWithData<ShipmentDTO>>
+    public class GetShipmentByIdHandler : IQueryHandler<GetShipmentByIdQuery, ShipmentDTO>
     {
         private readonly IApiClientSessionService _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
@@ -24,7 +26,7 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetById
             _shipmentRepository = shipmentRepository;
         }
 
-        public async Task<ResponseWithData<ShipmentDTO>> Handle(GetShipmentByIdQuery request, CancellationToken cancellationToken)
+        public async Task<Result<ShipmentDTO>> Handle(GetShipmentByIdQuery request, CancellationToken cancellationToken)
         {
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
@@ -35,7 +37,7 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetById
                                 .AsNoTracking()
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) throw new ValidationException("Shipment not found.");
+            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (shipment.ApiClient is not null)
             {
@@ -45,17 +47,12 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetById
                 {
                     if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
                     {
-                        throw new UnauthorizedAccessException("You cannot get this shipment");
+                        Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
                     }
                 }
             }
 
-            return new ResponseWithData<ShipmentDTO>
-            {
-                IsSuccess = true,
-                Data = new ShipmentDTO(shipment),
-                Message = "Shipment recevied successfully!"
-            };
+            return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
         }
     }
 }

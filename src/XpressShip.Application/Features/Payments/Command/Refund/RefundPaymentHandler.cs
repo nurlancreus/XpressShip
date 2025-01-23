@@ -13,10 +13,13 @@ using XpressShip.Domain.Enums;
 using XpressShip.Application.Interfaces.Services.Mail.Template;
 using XpressShip.Application.Interfaces.Services.Mail;
 using XpressShip.Application.DTOs.Mail;
+using XpressShip.Application.Abstractions;
+using XpressShip.Domain.Abstractions;
+using System.Threading;
 
 namespace XpressShip.Application.Features.Payments.Command.Refund
 {
-    public class RefundPaymentHandler : IRequestHandler<RefundPaymentCommand, ResponseWithData<string>>
+    public class RefundPaymentHandler : ICommandHandler<RefundPaymentCommand, string>
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
@@ -27,26 +30,21 @@ namespace XpressShip.Application.Features.Payments.Command.Refund
             _paymentService = paymentService;
         }
 
-        public async Task<ResponseWithData<string>> Handle(RefundPaymentCommand request, CancellationToken RefundlationToken)
+        public async Task<Result<string>> Handle(RefundPaymentCommand request, CancellationToken cancellationToken)
         {
-            var payment = await _paymentRepository.GetByIdAsync(request.Id, true, RefundlationToken);
+            var payment = await _paymentRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
-            if (payment is null) throw new Exception("Payment is not found");
+            if (payment is null) return Result<string>.Failure(Error.NotFoundError(nameof(payment)));
 
-            if (payment.TransactionId != request.TransactionId) throw new UnauthorizedAccessException("You can not refund this payment");
+            if (payment.TransactionId != request.TransactionId) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to refund the payment"));
 
-            if (payment.Status == PaymentStatus.Refunded) throw new Exception("Payment is already refunded");
+            if (payment.Status == PaymentStatus.Refunded) return Result<string>.Failure(Error.ConflictError("Payment is already refunded"));
 
-            bool isRefunded = await _paymentService.RefundPaymentAsync(payment, RefundlationToken);
+            bool isRefunded = await _paymentService.RefundPaymentAsync(payment, cancellationToken);
 
-            if (!isRefunded) throw new Exception("Could not refund the payment");
+            if (!isRefunded) return Result<string>.Failure(Error.UnexpectedError("Could not refunded the payment"));
 
-            return new ResponseWithData<string>
-            {
-                IsSuccess = true,
-                Data = payment.TransactionId,
-                Message = "Payment refunded successfully. It will be processed shortly."
-            };
+            return Result<string>.Success(payment.TransactionId);
         }
     }
 }

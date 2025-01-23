@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.DTOs.Mail;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Interfaces;
@@ -12,6 +13,7 @@ using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services.Mail;
 using XpressShip.Application.Interfaces.Services.Mail.Template;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Exceptions;
@@ -19,7 +21,7 @@ using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 {
-    public class UpdateShipmentStatusHandler : IRequestHandler<UpdateShipmentStatusCommand, ResponseWithData<ShipmentDTO>>
+    public class UpdateShipmentStatusHandler : ICommandHandler<UpdateShipmentStatusCommand, ShipmentDTO>
     {
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IShipmentMailTemplatesService _shipmentMailTemplatesService;
@@ -41,7 +43,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ResponseWithData<ShipmentDTO>> Handle(UpdateShipmentStatusCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ShipmentDTO>> Handle(UpdateShipmentStatusCommand request, CancellationToken cancellationToken)
         {
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
@@ -51,7 +53,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                                     .ThenInclude(c => c!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) throw new ValidationException("Shipment not found.");
+            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
             UserType user = shipment.ApiClient is not null ? UserType.ApiClient : UserType.Account;
 
@@ -59,7 +61,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 
             var newStatus = request.Status.EnsureEnumValueDefined<ShipmentStatus>();
 
-            string message = "";
             string subject = "";
             string body = "";
             RecipientDetailsDTO? recipientDetails = null;
@@ -69,7 +70,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                 case ShipmentStatus.Pending:
                     shipment.MakePending();
 
-                    message = "Shipment is Processing!";
                     break;
 
                 case ShipmentStatus.Delivered:
@@ -83,7 +83,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                     body = _shipmentMailTemplatesService.GenerateShipmentDeliveredEmail(
                         shipment.TrackingNumber, recipientDetails.Name, DateTime.UtcNow);
                     subject = "Shipment Delivered";
-                    message = "Shipment Delivered Successfully!";
 
                     await _shipmentHubService.ShipmentDeliveredMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is successfully delivered!", user, cancellationToken);
 
@@ -100,7 +99,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                     body = _shipmentMailTemplatesService.GenerateShipmentCanceledEmail(
                         shipment.TrackingNumber, recipientDetails.Name);
                     subject = "Shipment Canceled";
-                    message = "Shipment Canceled Successfully!";
 
                     await _shipmentHubService.ShipmentCanceledMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is canceled!", user, cancellationToken);
                     break;
@@ -117,7 +115,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                         shipment.TrackingNumber, recipientDetails.Name, (DateTime)shipment.EstimatedDate!);
 
                     subject = "Shipment Shipped";
-                    message = "Shipment Shipped Successfully!";
 
                     await _shipmentHubService.ShipmentShippedMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is successfully shipped! Estimated Delivery Date: {(DateTime)shipment.EstimatedDate!:F}", user, cancellationToken);
                     break;
@@ -134,29 +131,21 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                         shipment.TrackingNumber, recipientDetails.Name);
 
                     subject = "Shipment Failed";
-                    message = "Shipment Failed!";
 
                     await _shipmentHubService.ShipmentFailedMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is unfortunately failed!", user, cancellationToken);
                     break;
 
                 default:
-                    throw new ValidationException("Invalid status");
+                    return Result<ShipmentDTO>.Failure(Error.UnexpectedError("Invalid Status"));
             }
 
 
-            // Send email
             if (recipientDetails != null && !string.IsNullOrEmpty(body) && !string.IsNullOrEmpty(subject))
                 await _emailService.SendEmailAsync(recipientDetails, body, subject);
 
-            // Commit changes to database
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ResponseWithData<ShipmentDTO>
-            {
-                IsSuccess = true,
-                Data = new ShipmentDTO(shipment),
-                Message = message
-            };
+            return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
         }
     }
 }

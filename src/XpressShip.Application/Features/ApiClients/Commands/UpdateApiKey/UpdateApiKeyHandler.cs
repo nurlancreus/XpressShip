@@ -10,10 +10,12 @@ using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Responses;
 using XpressShip.Application.Interfaces;
+using XpressShip.Application.Abstractions;
+using XpressShip.Domain.Abstractions;
 
 namespace XpressShip.Application.Features.ApiClients.Commands.UpdateApiKey
 {
-    public class UpdateApiKeyHandler : IRequestHandler<UpdateApiKeyCommand, ResponseWithData<ApiClientDTO>>
+    public class UpdateApiKeyHandler : ICommandHandler<UpdateApiKeyCommand, string>
     {
         private readonly IApiClientRepository _apiClientRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -24,29 +26,17 @@ namespace XpressShip.Application.Features.ApiClients.Commands.UpdateApiKey
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ResponseWithData<ApiClientDTO>> Handle(UpdateApiKeyCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(UpdateApiKeyCommand request, CancellationToken cancellationToken)
         {
             ApiClient? apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
-            if (apiClient is null)
-            {
-                return new ResponseWithData<ApiClientDTO>
-                {
-                    IsSuccess = false,
-                    Message = "Api client not found"
-                };
-            }
+            if (apiClient is null) return Result<string>.Failure(Error.NotFoundError(nameof(apiClient)));
 
             apiClient.UpdateApiKey();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ResponseWithData<ApiClientDTO>
-            {
-                IsSuccess = true,
-                Message = "Api key updated successfully",
-                Data = new ApiClientDTO(apiClient)
-            };
+            return Result<string>.Success(apiClient.ApiKey);
         }
     }
 }

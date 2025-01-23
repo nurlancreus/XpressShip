@@ -10,10 +10,13 @@ using XpressShip.Application.Interfaces.Services.Payment;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Enums;
+using XpressShip.Application.Abstractions;
+using XpressShip.Domain.Abstractions;
+using System.Threading;
 
 namespace XpressShip.Application.Features.Payments.Command.Capture
 {
-    public class CapturePaymentHandler : IRequestHandler<CapturePaymentCommand, ResponseWithData<string>>
+    public class CapturePaymentHandler : ICommandHandler<CapturePaymentCommand, string>
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
@@ -24,26 +27,21 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
             _paymentService = paymentService;
         }
 
-        public async Task<ResponseWithData<string>> Handle(CapturePaymentCommand request, CancellationToken CapturelationToken)
+        public async Task<Result<string>> Handle(CapturePaymentCommand request, CancellationToken cancellationToken)
         {
-            var payment = await _paymentRepository.GetByIdAsync(request.Id, true, CapturelationToken);
+            var payment = await _paymentRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
-            if (payment is null) throw new Exception("Payment is not found");
+            if (payment is null) return Result<string>.Failure(Error.NotFoundError(nameof(payment)));
 
-            if (payment.TransactionId != request.TransactionId) throw new UnauthorizedAccessException("You can not capture this payment");
+            if (payment.TransactionId != request.TransactionId) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
 
-            if (payment.Status == PaymentStatus.Success) throw new Exception("Payment is already captured");
+            if (payment.Status == PaymentStatus.Success) return Result<string>.Failure(Error.ConflictError("Payment is already captured"));
 
-            bool isCaptureed = await _paymentService.CapturePaymentAsync(payment, CapturelationToken);
+            bool isCaptured = await _paymentService.CapturePaymentAsync(payment, cancellationToken);
 
-            if (!isCaptureed) throw new Exception("Could not capture the payment");
+            if (!isCaptured) return Result<string>.Failure(Error.UnexpectedError("Could not capture the payment"));
 
-            return new ResponseWithData<string>
-            {
-                IsSuccess = true,
-                Data = payment.TransactionId,
-                Message = "Payment captured successfully. It will be processed shortly."
-            };
+            return Result<string>.Success(payment.TransactionId);
         }
     }
 }

@@ -5,16 +5,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
+using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Extensions;
 using XpressShip.Domain.Validation;
 
 namespace XpressShip.Application.Features.Shipments.Queries.GetAll
 {
-    public class GetAllShipmentsHandler : IRequestHandler<GetAllShipmentsQuery, ResponseWithData<IEnumerable<ShipmentDTO>>>
+    public class GetAllShipmentsHandler : IQueryHandler<GetAllShipmentsQuery, IEnumerable<ShipmentDTO>>
     {
         private readonly IShipmentRepository _shipmentRepository;
         private readonly bool IsAdmin = true;
@@ -23,20 +26,20 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
             _shipmentRepository = shipmentRepository;
         }
 
-        public async Task<ResponseWithData<IEnumerable<ShipmentDTO>>> Handle(GetAllShipmentsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<IEnumerable<ShipmentDTO>>> Handle(GetAllShipmentsQuery request, CancellationToken cancellationToken)
         {
-            if (!IsAdmin) throw new UnauthorizedAccessException("You're not authorized to get payment details!");
+            if (!IsAdmin) return Result<IEnumerable<ShipmentDTO>>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
 
             var shipments = _shipmentRepository.Table
                 .Include(s => s.Rate)
                 .Include(s => s.OriginAddress)
-                    .ThenInclude(a => a.City)
+                    .ThenInclude(a => a!.City)
                         .ThenInclude(c => c.Country)
                 .Include(s => s.DestinationAddress)
                     .ThenInclude(a => a.City)
                         .ThenInclude(c => c.Country)
                 .Include(s => s.ApiClient)
-                    .ThenInclude(c => c.Address)
+                    .ThenInclude(c => c!.Address)
                         .ThenInclude(a => a.City)
                             .ThenInclude(c => c.Country)
                 .AsNoTracking()
@@ -85,12 +88,9 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
                 }
             }
 
-            return new ResponseWithData<IEnumerable<ShipmentDTO>>
-            {
-                IsSuccess = true,
-                Data = await shipments.Select(s => new ShipmentDTO(s)).ToListAsync(cancellationToken),
-                Message = "Shipments retrieved successfully!"
-            };
+            var dtos = await shipments.Select(s => new ShipmentDTO(s)).ToListAsync(cancellationToken);
+
+            return Result<IEnumerable<ShipmentDTO>>.Success(dtos);
         }
     }
 }

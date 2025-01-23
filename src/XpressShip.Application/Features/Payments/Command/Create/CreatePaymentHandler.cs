@@ -6,19 +6,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Features.Payments.DTOs;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services.Payment;
 using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Application.Features.Payments.Command.Create
 {
-    public class CreatePaymentHandler : IRequestHandler<CreatePaymentCommand, ResponseWithData<PaymentDTO>>
+    public class CreatePaymentHandler : ICommandHandler<CreatePaymentCommand, PaymentDTO>
     {
         private readonly IApiClientSessionService _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
@@ -33,7 +35,7 @@ namespace XpressShip.Application.Features.Payments.Command.Create
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ResponseWithData<PaymentDTO>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<PaymentDTO>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
         {
             var keys = _clientSessionService.GetClientApiAndSecretKey();
 
@@ -47,26 +49,20 @@ namespace XpressShip.Application.Features.Payments.Command.Create
                                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken);
 
 
-            if (shipment is null) throw new ValidationException("Shipment not found.");
+            if (shipment is null) return Result<PaymentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (keys is (string apiKey, string secretKey))
             {
 
                 if (shipment.ApiClient?.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
                 {
-                    throw new UnauthorizedAccessException("You cannot update this shipment");
+                    return Result<PaymentDTO>.Failure(Error.UnauthorizedError("You are not authorized to update this shipment"));
                 }
             }
 
             if (shipment.Payment?.TransactionId is not null)
-            {
-                return new ResponseWithData<PaymentDTO>
-                {
-                    IsSuccess = true,
-                    Data = new PaymentDTO(shipment.Payment),
-                    Message = "Payment already processed."
-                };
-            }
+             return Result<PaymentDTO>.Failure(Error.ConflictError("Payment already processed."));
+            
 
             var method = request.Method.EnsureEnumValueDefined<PaymentMethod>("method");
             var currency = request.Currency.EnsureEnumValueDefined<PaymentCurrency>("currency");
@@ -77,13 +73,7 @@ namespace XpressShip.Application.Features.Payments.Command.Create
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ResponseWithData<PaymentDTO>
-            {
-
-                IsSuccess = true,
-                Data = new PaymentDTO(shipment.Payment),
-                Message = "Payment process created successfully!"
-            };
+            return Result<PaymentDTO>.Success(new PaymentDTO(shipment.Payment));
         }
     }
 }

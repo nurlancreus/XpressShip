@@ -4,14 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 
 namespace XpressShip.Application.Features.ApiClients.Commands.Toggle
 {
-    public class ToggleApiClientHandler : IRequestHandler<ToggleApiClientCommand, BaseResponse>
+    public class ToggleApiClientHandler : ICommandHandler<ToggleApiClientCommand>
     {
         private readonly IApiClientRepository _apiClientRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -22,28 +24,17 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Toggle
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponse> Handle(ToggleApiClientCommand request, CancellationToken cancellationToken)
+        public async Task<Result<Unit>> Handle(ToggleApiClientCommand request, CancellationToken cancellationToken)
         {
             ApiClient? apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
-            if (apiClient is null)
-            {
-                return new BaseResponse
-                {
-                    IsSuccess = false,
-                    Message = "Api client not found"
-                };
-            }
+            if (apiClient is null) return Result<Unit>.Failure(Error.NotFoundError(nameof(apiClient)));
 
             apiClient.Toggle();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new BaseResponse
-            {
-                IsSuccess = true,
-                Message = "Api client updated successfully"
-            };
+            return Result<Unit>.Success(Unit.Value);
         }
     }
 }

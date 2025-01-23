@@ -4,15 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services.Payment;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
+using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 
 namespace XpressShip.Application.Features.Payments.Command.Cancel
 {
-    public class CancelPaymentHandler : IRequestHandler<CancelPaymentCommand, ResponseWithData<string>>
+    public class CancelPaymentHandler : ICommandHandler<CancelPaymentCommand, string>
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
@@ -23,26 +26,21 @@ namespace XpressShip.Application.Features.Payments.Command.Cancel
             _paymentService = paymentService;
         }
 
-        public async Task<ResponseWithData<string>> Handle(CancelPaymentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(CancelPaymentCommand request, CancellationToken cancellationToken)
         {
             var payment = await _paymentRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
-            if (payment is null) throw new Exception("Payment is not found");
+            if (payment is null) return Result<string>.Failure(Error.NotFoundError(nameof(payment)));
 
-            if (payment.TransactionId != request.TransactionId) throw new UnauthorizedAccessException("You can not cancel this payment");
+            if (payment.TransactionId != request.TransactionId) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));
 
-            if (payment.Status == PaymentStatus.Canceled) throw new Exception("Payment is already canceled");
+            if (payment.Status == PaymentStatus.Canceled) return Result<string>.Failure(Error.ConflictError("Payment is already canceled"));
 
             bool isCanceled = await _paymentService.CancelPaymentAsync(payment, cancellationToken);
 
-            if (!isCanceled) throw new Exception("Could not cancel the payment");
+            if (!isCanceled) return Result<string>.Failure(Error.UnexpectedError("Could not cancel the payment"));
 
-            return new ResponseWithData<string>
-            {
-                IsSuccess = true,
-                Data = payment.TransactionId,
-                Message = "Payment canceled successfully. It will be processed shortly."
-            };
+            return Result<string>.Success(payment.TransactionId);
         }
     }
 }

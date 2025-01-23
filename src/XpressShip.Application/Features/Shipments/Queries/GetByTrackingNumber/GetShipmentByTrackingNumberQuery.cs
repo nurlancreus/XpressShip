@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Responses;
 
 namespace XpressShip.Application.Features.Shipments.Queries.GetByTrackingNumber
 {
-    public record GetShipmentByTrackingNumberQuery : IRequest<ResponseWithData<ShipmentDTO>>
+    public record GetShipmentByTrackingNumberQuery : IQuery<ShipmentDTO>
     {
         public string TrackingNumber { get; set; } = string.Empty;
     }

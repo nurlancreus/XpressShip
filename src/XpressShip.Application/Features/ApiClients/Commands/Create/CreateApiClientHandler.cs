@@ -6,18 +6,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
 using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Interfaces;
 using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Interfaces.Services;
 using XpressShip.Application.Responses;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Extensions;
 using XpressShip.Domain.Validation;
 
 namespace XpressShip.Application.Features.ApiClients.Commands.Create
 {
-    public class CreateApiClientHandler : IRequestHandler<CreateApiClientCommand, ResponseWithData<ApiClientDTO>>
+    public class CreateApiClientHandler : ICommandHandler<CreateApiClientCommand, ApiClientDTO>
     {
         private readonly IApiClientRepository _apiClientRepository;
         private readonly ICountryRepository _countryRepository;
@@ -34,8 +36,12 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ResponseWithData<ApiClientDTO>> Handle(CreateApiClientCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ApiClientDTO>> Handle(CreateApiClientCommand request, CancellationToken cancellationToken)
         {
+            var isClientByEmailExist = await _apiClientRepository.IsExistAsync(c => c.Email == request.Email, cancellationToken);
+
+            if (isClientByEmailExist) return Result<ApiClientDTO>.Failure(Error.ConflictError($"Clint by email ({request.Email}) is already exists."));
+
             var apiClient = ApiClient.Create(request.CompanyName, request.Email);
 
             await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode, true, cancellationToken);
@@ -57,6 +63,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
             var city = country.Cities.FirstOrDefault(c => c.Name == request.Address.City);
 
             city = city.EnsureNonNull();
+
             address.City = city;
 
             apiClient.Address = address;
@@ -65,12 +72,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ResponseWithData<ApiClientDTO>
-            {
-                IsSuccess = true,
-                Message = "Api client created successfully",
-                Data = new ApiClientDTO(apiClient)
-            };
+            return Result<ApiClientDTO>.Success(new ApiClientDTO(apiClient));
         }
     }
 }

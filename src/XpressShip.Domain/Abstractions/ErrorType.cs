@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace XpressShip.Domain.Abstractions
+{
+    public enum ErrorType
+    {
+        None,
+        Unauthorized,
+        Forbidden,
+        NotFound,
+        Conflict,
+        Validation,
+        Unexpected,
+        Unhandled
+    }
+}
