@@ -8,14 +8,6 @@ namespace XpressShip.Domain.Validation
     public partial class ValidationRules
     {
         private const string DimensionPattern = @"^\s*(\d+)\s*[xX]\s*(\d+)\s*[xX]\s*(\d+)\s*(cm|CM)?\s*$";
-        public static Dictionary<string, (string[] Cities, string PostalCodePattern)> ValidCountries { get; set; } = new()
-            {
-                { "Azerbaijan", (["Baku"], @"AZ\s\d{4}$") },
-                { "Russia", (["Moscow"], @"^\d{6}$") },
-                { "Georgia", (["Tbilisi"], @"^\d{4}$") },
-                { "Iran", (["Tabriz", "Tehran"], @"^\d{10}$") },
-                { "Turkey", (["Ankara", "Istanbul", "Izmir"], @"^\d{5}$") }
-            };
 
         public static bool ValidateDimensions(string dimensions, bool throwException = true)
         {

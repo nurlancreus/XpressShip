@@ -16,10 +16,7 @@ namespace XpressShip.Domain.Entities
 
         public ICollection<City> Cities { get; set; } = [];
 
-        private Country()
-        {
-            
-        }
+        private Country() { }
 
         private Country(string name, string code, string postalCodePatterm, decimal taxPercentage)
         {

@@ -23,10 +23,7 @@ namespace XpressShip.Domain.Entities
         public double OvernightDeliveryTimeMultiplier { get; set; }
         public ICollection<Shipment> Shipments { get; set; } = [];
 
-        private ShipmentRate()
-        {
-
-        }
+        private ShipmentRate() { }
         private ShipmentRate(string name, string? description, decimal baseRate, double minWeight, double maxWeight, double minDistance, double maxDistance, double minVolume, double maxVolume, double baseRateForKm, double baseRateForKg, double baseRateForVolume, double expressRateMultiplier, double overnightRateMultiplier, double expressDeliveryTimeMultiplier, double overnightDeliveryTimeMultiplier)
         {
             Name = name;

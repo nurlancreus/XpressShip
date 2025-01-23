@@ -16,10 +16,7 @@ namespace XpressShip.Domain.Entities
 
         public ICollection<Shipment> Shipments { get; set; } = []; 
 
-        private ApiClient()
-        {
-
-        }
+        private ApiClient() { }
         private ApiClient(string companyName, string email)
         {
             CompanyName = companyName;

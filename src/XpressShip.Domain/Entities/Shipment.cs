@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using XpressShip.Domain;
 using XpressShip.Domain.Entities.Base;
 using XpressShip.Domain.Enums;
+using XpressShip.Domain.Extensions;
 using XpressShip.Domain.Validation;
 
 namespace XpressShip.Domain.Entities
@@ -89,6 +90,10 @@ namespace XpressShip.Domain.Entities
 
         public decimal CalculateShippingCost()
         {
+            Rate.EnsureNonNull(nameof(Rate));
+            Origin.EnsureNonNull(nameof(Origin));
+            DestinationAddress.EnsureNonNull(nameof(DestinationAddress));
+
             decimal baseCost = Rate.BaseRate;
             decimal weightCost = CalculateWeightCost();
             decimal volumeCost = CalculateSizeCost();
@@ -106,6 +111,8 @@ namespace XpressShip.Domain.Entities
 
         public decimal ApplyTax(decimal totalCost)
         {
+            DestinationAddress.EnsureNonNull(nameof(DestinationAddress));
+
             var taxRate = DestinationAddress.City.Country.TaxPercentage / 100;
 
             return totalCost * (1 - taxRate);
@@ -124,6 +131,9 @@ namespace XpressShip.Domain.Entities
 
         public decimal CalculateWeightCost()
         {
+            Rate.EnsureNonNull(nameof(Rate));
+            Weight.EnsureNonZero(nameof(Weight));
+
             ValidationRules.ValidateWeight(Weight, Rate);
 
             return (decimal)(Weight * Rate.BaseRateForKg);
@@ -131,6 +141,8 @@ namespace XpressShip.Domain.Entities
 
         public decimal CalculateDistanceCost(double distance)
         {
+            Rate.EnsureNonNull(nameof(Rate));
+
             ValidationRules.ValidateDistance(distance, Rate);
 
             return (decimal)(distance * Rate.BaseRateForKm);
@@ -145,6 +157,8 @@ namespace XpressShip.Domain.Entities
 
         public decimal CalculateSizeCost(int volume)
         {
+            Rate.EnsureNonNull(nameof(Rate));
+
             ValidationRules.ValidateVolume(volume, Rate);
 
             return volume * (decimal)Rate.BaseRateForVolume;
@@ -152,6 +166,8 @@ namespace XpressShip.Domain.Entities
 
         public int CalculateVolume()
         {
+            Dimensions.EnsureNonEmpty(nameof(Dimensions));
+
             ValidationRules.ValidateDimensions(Dimensions);
 
             return Dimensions.Split('x').Select(int.Parse).Aggregate((x, y) => x * y);
@@ -159,6 +175,9 @@ namespace XpressShip.Domain.Entities
 
         public DateTime CalculateEstimatedDelivery()
         {
+            Origin.EnsureNonNull(nameof(Origin));
+            DestinationAddress.EnsureNonNull(nameof(DestinationAddress));
+
             var distance = Origin.CalculateDistance(DestinationAddress);
 
             int baseDays = CalculateDefaultDeliveryTime(distance);

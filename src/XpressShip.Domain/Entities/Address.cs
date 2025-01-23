@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Domain.Entities.Base;
+using XpressShip.Domain.Extensions;
 using XpressShip.Domain.Validation;
 
 namespace XpressShip.Domain.Entities
@@ -43,6 +44,12 @@ namespace XpressShip.Domain.Entities
         public double CalculateDistance(Address destination)
         {
             if (destination == null) throw new ArgumentNullException(nameof(destination), "Destination cannot be null");
+
+            ValidationRules.IsValidLatitude(Latitude);
+            ValidationRules.IsValidLongitude(Longitude);
+
+            ValidationRules.IsValidLatitude(destination.Latitude);
+            ValidationRules.IsValidLongitude(destination.Longitude);
 
             return CalculateDistance(Latitude, Longitude, destination.Latitude, destination.Longitude);
         }
