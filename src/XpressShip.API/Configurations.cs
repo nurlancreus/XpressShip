@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using XpressShip.API.Middlewares;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
@@ -11,6 +15,9 @@ using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Behaviours;
 using XpressShip.Application.Options;
 using XpressShip.Application.Options.PaymentGateway;
+using XpressShip.Application.Options.Token;
+using XpressShip.Domain.Entities.Identity;
+using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Validation;
 using XpressShip.Infrastructure.Persistence;
 using XpressShip.Infrastructure.Persistence.Repositories;
@@ -31,6 +38,63 @@ namespace XpressShip.API
         {
             // Add services to the container.
             builder.Services.AddAuthorization();
+
+            #region Register Identity
+            builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
+                    .AddEntityFrameworkStores<AppDbContext>()
+                    .AddDefaultTokenProviders();
+
+            builder.Services.Configure<IdentityOptions>(options =>
+            {
+                // Password settings.
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequiredLength = 4;
+                options.Password.RequiredUniqueChars = 0;
+
+                // Lockout settings.
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+
+                // User settings.
+                options.User.AllowedUserNameCharacters =
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                options.User.RequireUniqueEmail = true;
+            });
+            #endregion
+
+            #region Register Authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+             
+             .AddJwtBearer(options =>
+             {
+                 options.TokenValidationParameters = new TokenValidationParameters()
+                 {
+                     ValidateAudience = true,
+                     ValidAudience = builder.Configuration["Token:Access:Audience"],
+                     ValidateIssuer = true,
+                     ValidIssuer = builder.Configuration["Token:Access:Issuer"],
+                     ValidateLifetime = true,
+                     ValidateIssuerSigningKey = true,
+                     IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Token:Access:SecurityKey"]!)),
+
+                     LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires != null && expires > DateTime.UtcNow,
+
+                     NameClaimType = ClaimTypes.Name,
+                     RoleClaimType = ClaimTypes.Role
+                 };
+             });
+
+            #endregion
+
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
 
@@ -43,7 +107,7 @@ namespace XpressShip.API
             // Configure DbContext with Scoped lifetime
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("Mock"), sqlOptions => sqlOptions
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Default"), sqlOptions => sqlOptions
                 .MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
                 .EnableSensitiveDataLogging();
             });
@@ -72,9 +136,10 @@ namespace XpressShip.API
 
             // Register Services
             #region Register Client Services
-            builder.Services.AddScoped<IApiClientSessionService, SessionService>();
+            builder.Services.AddScoped<IApiClientSessionService, ApiClientSessionService>();
             builder.Services.AddScoped<IAddressValidationService, AddressValidationService>();
-            builder.Services.AddScoped<ISessionService, SessionService>();
+            builder.Services.AddScoped<IApiClientSessionService, ApiClientSessionService>();
+            builder.Services.AddScoped<IJwtSession, JwtSession>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
 
             builder.Services.AddScoped<IDistanceService, DistanceService>();
@@ -88,14 +153,17 @@ namespace XpressShip.API
             builder.Services.AddScoped<IStripeService, StripeService>();
             #endregion
 
-
             // Register Options pattern
+            #region Register Options
             builder.Services.Configure<APISettings>(APISettings.GeoCodeAPI,
                     builder.Configuration.GetSection("API:GeoCodeAPI"));
 
             builder.Services.Configure<ShippingRatesSettings>(builder.Configuration.GetSection("ShippingRatesSettings"));
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailConfiguration"));
             builder.Services.Configure<PaymentGatewaySettings>(builder.Configuration.GetSection("PaymentGateways"));
+
+            builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("Token"));
+            #endregion
         }
 
         public static void RegisterMiddlewares(this WebApplication app)
