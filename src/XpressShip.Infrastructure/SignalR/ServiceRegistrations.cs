@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using XpressShip.Application.Interfaces.Hubs;
+using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Infrastructure.SignalR.HubServices;
 
 namespace XpressShip.Infrastructure.SignalR

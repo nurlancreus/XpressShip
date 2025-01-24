@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Stripe;
-using XpressShip.Application.Interfaces.Services.Payment.Stripe;
+using XpressShip.Application.Abstractions.Services.Payment.Stripe;
 using XpressShip.Application.Options.PaymentGateway;
 using XpressShip.Domain.Entities;
 

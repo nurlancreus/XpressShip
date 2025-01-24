@@ -6,7 +6,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using XpressShip.Application.Interfaces.Services.Session;
+using XpressShip.Application.Abstractions.Services.Session;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Infrastructure.Services.Session
@@ -15,51 +16,27 @@ namespace XpressShip.Infrastructure.Services.Session
     {
         private readonly IHeaderDictionary? _headers = httpContextAccessor?.HttpContext?.Request.Headers;
 
-        public string? GetApiKey(bool throwException = true)
+        public Result<string> GetApiKey()
         {
-            // Extract API Key values from request headers
-            if (_headers == null || !_headers.TryGetValue("X-Api-Key", out var apiKeyValues))
-            {
-                if (throwException) throw new ValidationException("API Key is missing.");
-                else return null;
-            }
+            if (_headers != null && _headers.TryGetValue("X-Api-Key", out var apiKeyValues) && apiKeyValues.FirstOrDefault() is string apiKey) return Result<string>.Success(apiKey);
 
-            var extractedApiKey = apiKeyValues.FirstOrDefault();
-
-            return extractedApiKey.EnsureNonNull("API Key");
+            return Result<string>.Failure(Error.ValidationError("API Key is missing."));
         }
 
-        public (string apiKey, string secretKey)? GetClientApiAndSecretKey(bool throwException = true)
+        public Result<(string apiKey, string secretKey)> GetClientApiAndSecretKey()
         {
-            // Extract API Key and Secret Key values from request headers
-            if (_headers == null || !_headers.TryGetValue("X-Api-Key", out var apiKeyValues) ||
-                !_headers.TryGetValue("X-Secret-Key", out var secretKeyValues))
-            {
-                if (throwException) throw new ValidationException("API Key or Secret Key is missing.");
-                else return null;
-            }
+            if (_headers != null && _headers.TryGetValue("X-Secret-Key", out var secretKeyValues) && _headers.TryGetValue("X-Api-Key", out var apiKeyValues) && apiKeyValues.FirstOrDefault() is string apiKey && secretKeyValues.FirstOrDefault() is string secretKey) 
+                
+                return Result<(string apiKey, string secretKey)>.Success((apiKey, secretKey));
 
-            var extractedApiKey = apiKeyValues.FirstOrDefault();
-            var extractedSecretKey = secretKeyValues.FirstOrDefault();
-
-            var apiKey = extractedApiKey.EnsureNonNull("API Key");
-            var secretKey = extractedSecretKey.EnsureNonNull("Secret Key");
-
-            return (apiKey, secretKey);
+            return Result<(string apiKey, string secretKey)>.Failure(Error.ValidationError("API Key or Secret Key is missing."));
         }
 
-        public string? GetSecretKey(bool throwException = true)
+        public Result<string> GetSecretKey()
         {
-            // Extract Secret Key values from request headers
-            if (_headers == null || !_headers.TryGetValue("X-Secret-Key", out var secretKeyValues))
-            {
-                if (throwException) throw new ValidationException("Secret Key is missing.");
-                else return null;
-            }
+            if (_headers != null && _headers.TryGetValue("X-Secret-Key", out var secretKeyValues) && secretKeyValues.FirstOrDefault() is string secretKey) return Result<string>.Success(secretKey);
 
-            var extractedSecretKey = secretKeyValues.FirstOrDefault();
-
-            return extractedSecretKey.EnsureNonNull("Secret Key");
+            return Result<string>.Failure(Error.ValidationError("Secret Key is missing."));
         }
     }
 }

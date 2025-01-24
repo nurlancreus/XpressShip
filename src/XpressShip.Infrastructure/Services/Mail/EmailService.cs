@@ -10,11 +10,11 @@ using System.Net.Mail;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using XpressShip.Application.Interfaces.Services.Mail;
 using XpressShip.Application.Options;
 using XpressShip.Domain.Enums;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 using XpressShip.Application.DTOs.Mail;
+using XpressShip.Application.Abstractions.Services.Mail;
 
 namespace XpressShip.Infrastructure.Services.Mail
 {

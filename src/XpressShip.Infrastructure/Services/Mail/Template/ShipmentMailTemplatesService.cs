@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using XpressShip.Application.Interfaces.Services.Mail.Template;
+using XpressShip.Application.Abstractions.Services.Mail.Template;
 
 namespace XpressShip.Infrastructure.Services.Mail.Template
 {

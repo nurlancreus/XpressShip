@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
-using XpressShip.Application.Interfaces.Hubs;
+using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Infrastructure.SignalR.Constants;
 using XpressShip.Infrastructure.SignalR.Hubs;
 

@@ -6,7 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using XpressShip.Application.Interfaces.Repositories;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Validation;
 
 namespace XpressShip.Infrastructure.Services.Validation
@@ -20,20 +21,17 @@ namespace XpressShip.Infrastructure.Services.Validation
             _countryRepository = countryRepository;
         }
 
-        public async Task<bool> ValidateCountryAsync(string countryName, bool throwException = true, CancellationToken cancellationToken = default)
+        public async Task<Result<bool>> ValidateCountryAsync(string countryName,CancellationToken cancellationToken = default)
         {
             var isCountryExist = await _countryRepository.IsExistAsync(c => c.Name == countryName, cancellationToken);
 
             if (!isCountryExist)
-            {
-                if (throwException) throw new ValidationException($"Country ({countryName}) is not supported");
-                return false;
-            }
+                 return Result<bool>.Failure(Error.ConflictError($"Country ({countryName}) is not supported"));
 
-            return true;
+            return Result<bool>.Success(true);
         }
 
-        public async Task<bool> ValidateCountryAndCityAsync(string countryName, string cityName, bool throwException = true, CancellationToken cancellationToken = default)
+        public async Task<Result<bool>> ValidateCountryAndCityAsync(string countryName, string cityName,CancellationToken cancellationToken = default)
         {
             var country = await _countryRepository.Table
                                  .Include(c => c.Cities)
@@ -41,52 +39,33 @@ namespace XpressShip.Infrastructure.Services.Validation
                                  .FirstOrDefaultAsync(c => c.Name == countryName, cancellationToken);
 
             if (country is null)
-            {
-                if (throwException) throw new ValidationException($"Country ({countryName}) is not supported");
-                return false;
-            }
-            else
-            {
-                if (!country.Cities.Select(c => c.Name).Any(cName => cName == cityName))
-                {
-                    if (throwException) throw new ValidationException($"City ({cityName}) is invalid for the specified country.");
+                return Result<bool>.Failure(Error.ConflictError($"Country ({countryName}) is not supported"));
+            else if (!country.Cities.Select(c => c.Name).Any(cName => cName == cityName))
+                return Result<bool>.Failure(Error.ConflictError($"City ({cityName}) is invalid for the specified country."));
 
-                    return false;
-                }
-
-            }
-
-            return true;
+            return Result<bool>.Success(true);
         }
 
-        public async Task<bool> ValidateCountryAndPostalCodeAsync(string countryName, string postalCode, bool throwException = true, CancellationToken cancellationToken = default)
+        public async Task<Result<bool>> ValidateCountryAndPostalCodeAsync(string countryName, string postalCode,CancellationToken cancellationToken = default)
         {
             var country = await _countryRepository.Table
                                  .Select(c => new { c.Name, c.PostalCodePattern })
                                  .FirstOrDefaultAsync(c => c.Name == countryName, cancellationToken);
 
             if (country is null)
-            {
-                if (throwException) throw new ValidationException($"Country ({countryName}) is not supported");
-
-                return false;
-            }
+                return Result<bool>.Failure(Error.ConflictError($"Country ({countryName}) is not supported"));
             else
             {
                 var isMatch = new Regex(country.PostalCodePattern).IsMatch(postalCode);
 
                 if (!isMatch)
-                {
-                    if (throwException) throw new ValidationException("Postal code is invalid for the specified country.");
-
-                    return false;
-                }
+                    return Result<bool>.Failure(Error.ConflictError("Postal code is invalid for the specified country."));     
             }
 
-            return true;
+            return Result<bool>.Success(true);
         }
 
-        public async Task<bool> ValidateCountryCityAndPostalCodeAsync(string countryName, string cityName, string postalCode, bool throwException = true, CancellationToken cancellationToken = default)
+        public async Task<Result<bool>> ValidateCountryCityAndPostalCodeAsync(string countryName, string cityName, string postalCode,CancellationToken cancellationToken = default)
         {
             var country = await _countryRepository.Table
                                  .Include(c => c.Cities)
@@ -94,31 +73,19 @@ namespace XpressShip.Infrastructure.Services.Validation
                                  .FirstOrDefaultAsync(c => c.Name == countryName, cancellationToken);
 
             if (country is null)
-            {
-                if (throwException) throw new ValidationException($"Country ({countryName}) is not supported");
-
-                return false;
-            }
+                return Result<bool>.Failure(Error.ConflictError($"Country ({countryName}) is not supported"));
             else
             {
                 var isMatch = new Regex(country.PostalCodePattern).IsMatch(postalCode);
 
                 if (!isMatch)
-                {
-                    if (throwException) throw new ValidationException("Postal code is invalid for the specified country.");
-
-                    return false;
-                }
+                    return Result<bool>.Failure(Error.ConflictError("Postal code is invalid for the specified country."));
 
                 if (!country.Cities.Select(c => c.Name).Any(cName => cName == cityName))
-                {
-                    if (throwException) throw new ValidationException($"City ({cityName}) is invalid for the specified country.");
-
-                    return false;
-                }
+                    return Result<bool>.Failure(Error.ConflictError($"City ({cityName}) is invalid for the specified country."));
             }
 
-            return true;
+            return Result<bool>.Success(true);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using XpressShip.Application.Interfaces.Repositories;
+using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Domain.Entities.Base;
 
 namespace XpressShip.Infrastructure.Persistence.Repositories
