@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace XpressShip.Domain.Abstractions
 {
-    public interface IValue
+    public interface IBase
     {
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

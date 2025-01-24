@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Domain;
 using XpressShip.Domain.Entities.Base;
+using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Extensions;
 using XpressShip.Domain.Validation;
@@ -27,18 +28,16 @@ namespace XpressShip.Domain.Entities
         public Address? OriginAddress { get; set; }
         public Guid DestinationAddressId { get; set; }
         public Address DestinationAddress { get; set; } = null!;
-
+        public string? SenderId { get; set; }
+        public Sender? Sender { get; set; }
         public Guid? ApiClientId { get; set; }
         public ApiClient? ApiClient { get; set; }
 
         public Payment? Payment { get; set; }
 
-        public Address Origin => (OriginAddress ?? ApiClient?.Address)!;
+        public Address Origin => (OriginAddress ?? Sender?.Address ?? ApiClient?.Address)!;
 
-        private Shipment()
-        {
-
-        }
+        private Shipment() { }
 
         private Shipment(double weight, string dimensions, ShipmentMethod method, string? note)
         {

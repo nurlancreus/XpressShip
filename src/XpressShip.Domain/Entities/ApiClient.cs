@@ -2,6 +2,7 @@
 using System.Text;
 using XpressShip.Domain;
 using XpressShip.Domain.Entities.Base;
+using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Domain.Entities
 {
@@ -9,12 +10,13 @@ namespace XpressShip.Domain.Entities
     {
         public string CompanyName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string ApiKey { get; set; } = string.Empty; 
-        public string SecretKey { get; set; } = string.Empty;  
+        public string ApiKey { get; set; } = string.Empty;
+        public string SecretKey { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
-        public Address Address { get; set; } = null!; 
+        public DateTime? DeActivatedAt { get; set; }
+        public Address Address { get; set; } = null!;
 
-        public ICollection<Shipment> Shipments { get; set; } = []; 
+        public ICollection<Shipment> Shipments { get; set; } = [];
 
         private ApiClient() { }
         private ApiClient(string companyName, string email)
@@ -28,13 +30,26 @@ namespace XpressShip.Domain.Entities
 
         public static ApiClient Create(string companyName, string email)
         {
+            companyName.EnsureNonEmpty();
+            email.EnsureNonEmpty();
+
+            email.EnsureValidEmail();
+
             return new ApiClient(companyName, email);
         }
 
         public void Toggle()
         {
-            if (IsActive) IsActive = false;
-            else IsActive = true;
+            if (IsActive)
+            {
+                IsActive = false;
+                DeActivatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                IsActive = true;
+                DeActivatedAt = null;
+            }
         }
 
         public void UpdateApiKey() => ApiKey = GenerateApiKey();
@@ -42,13 +57,13 @@ namespace XpressShip.Domain.Entities
 
         private static string GenerateApiKey()
         {
-            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)); 
+            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
             return HashKey(key);
         }
 
         private static string GenerateSecretKey()
         {
-            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)); 
+            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             return HashKey(key);
         }
         private static string HashKey(string key)
