@@ -6,9 +6,9 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Payments.DTOs;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
 
 namespace XpressShip.Application.Features.Payments.Queries.Get
@@ -40,11 +40,11 @@ namespace XpressShip.Application.Features.Payments.Queries.Get
 
             if (payment is null) throw new Exception();
 
-            var keys = _apiClientSessionService.GetClientApiAndSecretKey();
+            var keysResult = _apiClientSessionService.GetClientApiAndSecretKey();
 
-            if (keys is (string apikey, string secretKey))
+            if (keysResult.IsSuccess)
             {
-                if (payment.Shipment.ApiClient is null || payment.Shipment.ApiClient.ApiKey != apikey || payment.Shipment.ApiClient.SecretKey != secretKey)
+                if (payment.Shipment.ApiClient is null || payment.Shipment.ApiClient.ApiKey != keysResult.Value.apiKey || payment.Shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
                     throw new UnauthorizedAccessException("You're not authorized to get payment details!");
 
             }

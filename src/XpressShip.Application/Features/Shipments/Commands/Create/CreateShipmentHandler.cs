@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services;
+using XpressShip.Application.Abstractions.Services.Session;
+using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Interfaces;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services;
-using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -54,16 +54,16 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
         {
             ApiClient? client = null;
 
-            var keys = _clientSessionService.GetClientApiAndSecretKey();
+            var keysResult = _clientSessionService.GetClientApiAndSecretKey();
 
-            if (keys is (string apiKey, string secretKey))
+            if (keysResult.IsSuccess)
             {
                 // Validate API client
                 client = await _apiClientRepository.Table
                     .Include(c => c.Address)
                         .ThenInclude(a => a.City)
                             .ThenInclude(c => c.Country)
-                    .FirstOrDefaultAsync(a => a.ApiKey == apiKey && a.SecretKey == secretKey && a.IsActive, cancellationToken);
+                    .FirstOrDefaultAsync(a => a.ApiKey == keysResult.Value.apiKey && a.SecretKey == keysResult.Value.secretKey && a.IsActive, cancellationToken);
 
                 if (client is null) 
                     return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(client)));
@@ -86,19 +86,25 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             double originLon = 0;
 
             // Validate Destination Address
-            await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Destination.Country, request.Destination.City, request.Destination.PostalCode, true, cancellationToken);
+            var destAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Destination.Country, request.Destination.City, request.Destination.PostalCode, cancellationToken);
+
+            if (!destAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(destAddressValidationResult.Error);
 
             Address? originAddress = null;
 
             if (request.Origin is not null)
             {
                 // Validate Origin Address
-                await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Origin.Country, request.Origin.City, request.Origin.PostalCode, true, cancellationToken);
+               var originAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Origin.Country, request.Origin.City, request.Origin.PostalCode,  cancellationToken);
 
-                var originGeoInfo = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Origin.Country, request.Origin.City, cancellationToken);
+                if (!originAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(originAddressValidationResult.Error);
 
-                originLat = originGeoInfo.Latitude;
-                originLon = originGeoInfo.Longitude;
+                var originGeoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Origin.Country, request.Origin.City, cancellationToken);
+
+                if (!originGeoInfoResult.IsSuccess) return Result<ShipmentDTO>.Failure(originGeoInfoResult.Error);
+
+                originLat = originGeoInfoResult.Value.Latitude;
+                originLon = originGeoInfoResult.Value.Longitude;
 
                 originAddress = Address.Create(request.Origin.PostalCode, request.Origin.Street, originLat, originLon);
 
@@ -122,7 +128,9 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             }
 
             // Calculate and validate distance
-            var destinationGeoInfo = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Destination.Country, request.Destination.City, cancellationToken);
+            var destinationGeoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Destination.Country, request.Destination.City, cancellationToken);
+
+            if(!destinationGeoInfoResult.IsSuccess) return Result<ShipmentDTO>.Failure(destinationGeoInfoResult.Error);
 
             // Validate method
             var method = request.Method.EnsureEnumValueDefined<ShipmentMethod>();
@@ -134,7 +142,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
             shipment.ApiClientId = client!.Id;
 
             // Create and validate adresses
-            var destinationAddress = Address.Create(request.Destination.PostalCode, request.Destination.Street, destinationGeoInfo.Latitude, destinationGeoInfo.Longitude);
+            var destinationAddress = Address.Create(request.Destination.PostalCode, request.Destination.Street, destinationGeoInfoResult.Value.Latitude, destinationGeoInfoResult.Value.Longitude);
 
             var country = await _countryRepository.Table
                             .Include(c => c.Cities)

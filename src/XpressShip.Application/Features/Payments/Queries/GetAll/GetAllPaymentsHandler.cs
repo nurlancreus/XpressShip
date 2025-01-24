@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Payments.DTOs;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Entities;
 

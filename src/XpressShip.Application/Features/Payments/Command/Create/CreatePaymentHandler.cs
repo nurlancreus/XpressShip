@@ -7,11 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Payment;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Payments.DTOs;
-using XpressShip.Application.Interfaces;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Payment;
-using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -37,7 +36,7 @@ namespace XpressShip.Application.Features.Payments.Command.Create
 
         public async Task<Result<PaymentDTO>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
         {
-            var keys = _clientSessionService.GetClientApiAndSecretKey();
+            var keysResult = _clientSessionService.GetClientApiAndSecretKey();
 
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.DestinationAddress)
@@ -51,10 +50,9 @@ namespace XpressShip.Application.Features.Payments.Command.Create
 
             if (shipment is null) return Result<PaymentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
-            if (keys is (string apiKey, string secretKey))
+            if (keysResult.IsSuccess)
             {
-
-                if (shipment.ApiClient?.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+                if (shipment.ApiClient?.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
                 {
                     return Result<PaymentDTO>.Failure(Error.UnauthorizedError("You are not authorized to update this shipment"));
                 }

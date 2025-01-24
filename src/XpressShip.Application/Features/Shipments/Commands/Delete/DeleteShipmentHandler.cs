@@ -6,9 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
-using XpressShip.Application.Interfaces;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Session;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Exceptions;
@@ -36,18 +35,18 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
                                 .Include(s => s.OriginAddress)
                                 .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
-                                    .ThenInclude(c => c.Address)
+                                    .ThenInclude(c => c!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
             if (shipment is null) return Result<Unit>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (shipment.ApiClient is not null)
             {
-                var keys = _clientSessionService.GetClientApiAndSecretKey();
+                var keysResult = _clientSessionService.GetClientApiAndSecretKey();
 
-                if (keys is (string apiKey, string secretKey))
+                if (keysResult.IsSuccess)
                 {
-                    if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+                    if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
                     {
                         return Result<Unit>.Failure(Error.UnauthorizedError("You are not authorized to delete this shipment"));
                     }

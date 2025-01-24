@@ -5,14 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.DTOs.Mail;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Mail.Template;
-using XpressShip.Application.Interfaces.Services.Mail;
 using Microsoft.EntityFrameworkCore;
-using XpressShip.Application.Interfaces;
 using XpressShip.Application.Notifications.Payment;
-using XpressShip.Application.Interfaces.Hubs;
 using XpressShip.Domain.Enums;
+using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Hubs;
+using XpressShip.Application.Abstractions.Services.Mail;
+using XpressShip.Application.Abstractions.Services.Mail.Template;
 
 namespace XpressShip.Application.Features.Payments.Handlers
 {

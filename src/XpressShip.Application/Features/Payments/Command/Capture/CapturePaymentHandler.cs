@@ -5,14 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Features.Payments.Command.Capture;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Payment;
-using XpressShip.Application.Interfaces;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Enums;
 using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
 using System.Threading;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Payment;
 
 namespace XpressShip.Application.Features.Payments.Command.Capture
 {

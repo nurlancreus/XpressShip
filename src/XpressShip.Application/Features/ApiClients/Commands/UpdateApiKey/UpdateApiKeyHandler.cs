@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 using XpressShip.Domain;
 using XpressShip.Domain.Entities;
 using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Responses;
-using XpressShip.Application.Interfaces;
 using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
 
 namespace XpressShip.Application.Features.ApiClients.Commands.UpdateApiKey
 {

@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -36,15 +36,14 @@ namespace XpressShip.Application.Features.ApiClients.Queries.Get
                                 .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
             if (apiClient is null)
-            {
-                return Result<ApiClientDTO>.Failure(Error.NotFoundError(nameof(apiClient)));
-            }
+                 return Result<ApiClientDTO>.Failure(Error.NotFoundError(nameof(apiClient)));
+            
 
-            var keys = _apiClientSessionService.GetClientApiAndSecretKey();
+            var keysResult = _apiClientSessionService.GetClientApiAndSecretKey();
 
-            if (keys is (string apikey, string secretKey))
+            if (keysResult.IsSuccess)
             {
-                if (apiClient.ApiKey != apikey || apiClient.SecretKey != secretKey)
+                if (apiClient.ApiKey != keysResult.Value.apiKey || apiClient.SecretKey != keysResult.Value.secretKey)
                     return Result<ApiClientDTO>.Failure(Error.UnauthorizedError("You're not authorized to get payment details!"));
 
             }

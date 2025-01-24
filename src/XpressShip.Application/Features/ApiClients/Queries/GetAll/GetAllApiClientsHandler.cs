@@ -6,8 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Interfaces.Repositories;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 

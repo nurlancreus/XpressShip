@@ -5,10 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Session;
-using XpressShip.Application.Interfaces.Services;
-using XpressShip.Application.Interfaces;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
@@ -20,6 +16,9 @@ using XpressShip.Application.DTOs;
 using XpressShip.Domain.Extensions;
 using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
+using XpressShip.Application.Abstractions.Services;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
@@ -58,11 +57,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
             if (shipment.ApiClient is not null)
             {
-                var keys = _clientSessionService.GetClientApiAndSecretKey();
+                var keysResult = _clientSessionService.GetClientApiAndSecretKey();
 
-                if (keys is (string apiKey, string secretKey))
+                if (keysResult.IsSuccess)
                 {
-                    if (shipment.ApiClient.ApiKey != apiKey || shipment.ApiClient.SecretKey != secretKey)
+                    if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
                     {
                         return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
                     }
@@ -85,11 +84,15 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             if (request.Origin is AddressCommandDTO originAddress)
             {
                 // Validate Origin Address
-                await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(originAddress.Country, originAddress.City, originAddress.PostalCode, true, cancellationToken);
+               var originAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(originAddress.Country, originAddress.City, originAddress.PostalCode, cancellationToken);
 
-                var originGeoInfo = await _geoInfoService.GetLocationGeoInfoByNameAsync(originAddress.Country, originAddress.City, cancellationToken);
+                if (!originAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(originAddressValidationResult.Error);
 
-                shipment.OriginAddress = Address.Create(originAddress.PostalCode, originAddress.Street, originGeoInfo.Latitude, originGeoInfo.Longitude);
+                var originGeoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(originAddress.Country, originAddress.City, cancellationToken);
+
+                if (!originGeoInfoResult.IsSuccess) return Result<ShipmentDTO>.Failure(originGeoInfoResult.Error);
+
+                shipment.OriginAddress = Address.Create(originAddress.PostalCode, originAddress.Street, originGeoInfoResult.Value.Latitude, originGeoInfoResult.Value.Longitude);
 
                 var country = await _countryRepository.Table
                             .Include(c => c.Cities)
@@ -108,11 +111,15 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             if (request.Destination is AddressCommandDTO destinationAddress)
             {
                 // Validate Destination Address
-                await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(destinationAddress.Country, destinationAddress.City, destinationAddress.PostalCode, true, cancellationToken);
+               var destAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(destinationAddress.Country, destinationAddress.City, destinationAddress.PostalCode, cancellationToken);
 
-                var destinationGeoInfo = await _geoInfoService.GetLocationGeoInfoByNameAsync(destinationAddress.Country, destinationAddress.City, cancellationToken);
+                if (!destAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(destAddressValidationResult.Error);
 
-                shipment.DestinationAddress = Address.Create(destinationAddress.PostalCode, destinationAddress.Street, destinationGeoInfo.Latitude, destinationGeoInfo.Longitude);
+                var destinationGeoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(destinationAddress.Country, destinationAddress.City, cancellationToken);
+
+                if (!destinationGeoInfoResult.IsSuccess) return Result<ShipmentDTO>.Failure(destinationGeoInfoResult.Error);
+
+                shipment.DestinationAddress = Address.Create(destinationAddress.PostalCode, destinationAddress.Street, destinationGeoInfoResult.Value.Latitude, destinationGeoInfoResult.Value.Longitude);
 
                 var country = await _countryRepository.Table
                             .Include(c => c.Cities)
@@ -128,27 +135,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                 shipment.DestinationAddress.City = city;
             }
 
-            if (request.Weight is double weight && shipment.Weight != weight)
-            {
-                shipment.Weight = weight;
-            }
-
-            if (request.Dimensions is string dimensions && shipment.Dimensions != dimensions)
-            {
-                shipment.Dimensions = dimensions;
-            }
-
-            if (request.Note is string note && shipment.Note != note)
-            {
-                shipment.Note = note;
-            }
-
-            if (request.Method is string method)
-            {
-                var shipmentMethod = method.EnsureEnumValueDefined<ShipmentMethod>();
-
-                if (shipmentMethod != shipment.Method) shipment.Method = shipmentMethod;
-            }
+            shipment.Update(request.Weight, request.Dimensions, request.Method, request.Note);
 
             shipment.Cost = shipment.CalculateShippingCost();
 

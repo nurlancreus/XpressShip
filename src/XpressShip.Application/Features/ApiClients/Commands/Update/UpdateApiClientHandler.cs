@@ -6,10 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Interfaces;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -59,12 +58,16 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
 
             if (request.Address is not null)
             {
-                await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode, true, cancellationToken);
+               var addressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode,  cancellationToken);
 
-                var response = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Address.Country, request.Address.City, cancellationToken);
+                if (!addressValidationResult.IsSuccess) return Result<ApiClientDTO>.Failure(addressValidationResult.Error);
 
-                var lat = response.Latitude;
-                var lon = response.Longitude;
+                var geoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Address.Country, request.Address.City, cancellationToken);
+
+                if (!geoInfoResult.IsSuccess) return Result<ApiClientDTO>.Failure(geoInfoResult.Error);
+
+                var lat = geoInfoResult.Value.Latitude;
+                var lon = geoInfoResult.Value.Longitude;
 
                 var address = Address.Create(request.Address.PostalCode, request.Address.Street, lat, lon);
 

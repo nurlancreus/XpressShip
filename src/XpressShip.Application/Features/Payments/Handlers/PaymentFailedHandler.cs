@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Application.Abstractions;
+using XpressShip.Application.Abstractions.Hubs;
+using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Mail;
+using XpressShip.Application.Abstractions.Services.Mail.Template;
 using XpressShip.Application.DTOs.Mail;
-using XpressShip.Application.Interfaces;
-using XpressShip.Application.Interfaces.Hubs;
-using XpressShip.Application.Interfaces.Repositories;
-using XpressShip.Application.Interfaces.Services.Mail;
-using XpressShip.Application.Interfaces.Services.Mail.Template;
 using XpressShip.Application.Notifications.Payment;
 using XpressShip.Domain.Enums;
 
