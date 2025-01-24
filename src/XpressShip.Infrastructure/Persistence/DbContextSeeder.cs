@@ -1,6 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using XpressShip.Domain.Entities;
+using XpressShip.Domain.Entities.Identity;
+using XpressShip.Domain.Entities.Users;
 using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace XpressShip.Infrastructure.Persistence
@@ -44,7 +47,37 @@ namespace XpressShip.Infrastructure.Persistence
 
         public static void SeedData(this ModelBuilder builder)
         {
-            
+
+            #region Seed Super Admin
+            var superAdminRole = ApplicationRole.Create("SuperAdmin", "Super Admin Role");
+            superAdminRole.Id = Guid.NewGuid().ToString();
+            superAdminRole.NormalizedName = "SUPERADMIN";
+
+            builder.Entity<ApplicationRole>().HasData(superAdminRole);
+
+            // Seed the admin user
+            var passwordHasher = new PasswordHasher<ApplicationUser>();
+
+            var superAdminUser = Admin.Create("Nurlan", "Shukurov", "nurlancreus", "nurlancreus@example.com", "+994513456776");
+
+            superAdminUser.Id = Guid.NewGuid().ToString();
+            superAdminUser.NormalizedUserName = "NURLANCREUS";
+            superAdminUser.NormalizedEmail = "NURLANCREUS@EXAMPLE.COM";
+
+            superAdminUser.PasswordHash = passwordHasher.HashPassword(superAdminUser, "qwerty1234");
+
+            builder.Entity<Admin>().HasData(superAdminUser);
+
+            // Seed user role mapping
+            builder.Entity<IdentityUserRole<string>>().HasData(
+                new IdentityUserRole<string>
+                {
+                    UserId = superAdminUser.Id,
+                    RoleId = superAdminRole.Id,
+                }
+            );
+            #endregion;
+
 
             #region Seed Locations
             // Azerbaijan

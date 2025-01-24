@@ -12,8 +12,8 @@ using XpressShip.Infrastructure.Persistence;
 namespace XpressShip.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250119105825_mig_1")]
-    partial class mig_1
+    [Migration("20250124131042_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,119 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "76e77f40-c5d1-4cd5-bc00-f5425716e4ff",
+                            RoleId = "a28012e7-5cdb-4651-b3ae-8709b2ce319d"
+                        });
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
 
             modelBuilder.Entity("XpressShip.Domain.Entities.Address", b =>
                 {
@@ -73,7 +186,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000002"),
                             CityId = new Guid("c1a0b1b0-0001-0000-0000-000000000001"),
                             ClientId = new Guid("e1a0b1b0-0001-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Latitude = 40.375588499999999,
                             Longitude = 49.832800900000002,
                             PostalCode = "AZ1000",
@@ -98,6 +211,13 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeActivatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -113,6 +233,9 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.HasIndex("ApiKey")
                         .IsUnique();
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.HasIndex("SecretKey")
                         .IsUnique();
 
@@ -122,11 +245,12 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000001"),
-                            ApiKey = "DtCjCFdg8F5UwN4qh+jq4x5F0F3NZH7kwlStqeJT1xQ=",
+                            ApiKey = "wAqqzTX3qNYlvoi8WT7exnXiTW2QgMfPi/RbAGbBSF8=",
                             CompanyName = "My Company",
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
+                            Email = "nurlancreus007@gmail.com",
                             IsActive = true,
-                            SecretKey = "DDdTq31f3XFZB0Q37bylv9OWXdh4JJMD1D0Q2JdXxnjHcv1U8D0anqmagSVizoKyIWUH53/MftB4BTFD/qvwaw=="
+                            SecretKey = "npqaCZ9X1yq+M34eY5U5WTmFGvNTv1t2h+nSZdSWMJU="
                         });
                 });
 
@@ -160,91 +284,91 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Baku"
                         },
                         new
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Sumqayit"
                         },
                         new
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000003"),
                             CountryId = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Ganja"
                         },
                         new
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Moscow"
                         },
                         new
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Saint Petersburg"
                         },
                         new
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000003"),
                             CountryId = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Kazan"
                         },
                         new
                         {
                             Id = new Guid("b1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("b1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Tbilisi"
                         },
                         new
                         {
                             Id = new Guid("b1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("b1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Batumi"
                         },
                         new
                         {
                             Id = new Guid("d1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("d1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Tabriz"
                         },
                         new
                         {
                             Id = new Guid("d1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("d1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Tehran"
                         },
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000001"),
                             CountryId = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Ankara"
                         },
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000002"),
                             CountryId = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Istanbul"
                         },
                         new
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000003"),
                             CountryId = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Izmir"
                         });
                 });
@@ -289,7 +413,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("c1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "AZE",
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Azerbaijan",
                             PostalCodePattern = "AZ\\s\\d{4}$",
                             TaxPercentage = 20m
@@ -298,7 +422,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("a1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "RUS",
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Russia",
                             PostalCodePattern = "^\\d{6}$",
                             TaxPercentage = 18m
@@ -307,7 +431,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("b1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "GEO",
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Georgia",
                             PostalCodePattern = "^\\d{4}$",
                             TaxPercentage = 15m
@@ -316,7 +440,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("d1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "IRN",
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Iran",
                             PostalCodePattern = "^\\d{10}$",
                             TaxPercentage = 25m
@@ -325,11 +449,99 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         {
                             Id = new Guid("e1a0b1b0-0001-0000-0000-000000000000"),
                             Code = "TUR",
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Name = "Turkey",
                             PostalCodePattern = "^\\d{5}$",
                             TaxPercentage = 18m
                         });
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Identity.ApplicationRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "a28012e7-5cdb-4651-b3ae-8709b2ce319d",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Super Admin Role",
+                            Name = "SuperAdmin",
+                            NormalizedName = "SUPERADMIN"
+                        });
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ShipmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipmentId")
+                        .IsUnique();
+
+                    b.HasIndex("TransactionId")
+                        .IsUnique();
+
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("XpressShip.Domain.Entities.Shipment", b =>
@@ -338,7 +550,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ApiClientId")
+                    b.Property<Guid?>("ApiClientId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Cost")
@@ -355,7 +567,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("EstimatedDate")
+                    b.Property<DateTime?>("EstimatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Method")
@@ -367,6 +579,9 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("OriginAddressId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SenderId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("ShipmentRateId")
                         .HasColumnType("uniqueidentifier");
@@ -392,6 +607,8 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.HasIndex("DestinationAddressId");
 
                     b.HasIndex("OriginAddressId");
+
+                    b.HasIndex("SenderId");
 
                     b.HasIndex("ShipmentRateId");
 
@@ -480,7 +697,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 1.5,
                             BaseRateForKm = 0.050000000000000003,
                             BaseRateForVolume = 2.0,
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Description = "Rate for small packages within local regions.",
                             ExpressDeliveryTimeMultiplier = 0.80000000000000004,
                             ExpressRateMultiplier = 1.2,
@@ -501,7 +718,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 2.0,
                             BaseRateForKm = 0.10000000000000001,
                             BaseRateForVolume = 3.0,
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Description = "Rate for medium-sized packages within regional areas.",
                             ExpressDeliveryTimeMultiplier = 0.69999999999999996,
                             ExpressRateMultiplier = 1.3,
@@ -522,7 +739,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 3.5,
                             BaseRateForKm = 0.20000000000000001,
                             BaseRateForVolume = 4.5,
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Description = "Rate for large packages for national deliveries.",
                             ExpressDeliveryTimeMultiplier = 0.59999999999999998,
                             ExpressRateMultiplier = 1.5,
@@ -543,7 +760,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 5.0,
                             BaseRateForKm = 0.29999999999999999,
                             BaseRateForVolume = 6.0,
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Description = "Rate for heavy packages for international deliveries.",
                             ExpressDeliveryTimeMultiplier = 0.5,
                             ExpressRateMultiplier = 1.7,
@@ -564,7 +781,7 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             BaseRateForKg = 7.0,
                             BaseRateForKm = 0.5,
                             BaseRateForVolume = 8.0,
-                            CreatedAt = new DateTime(2025, 1, 19, 10, 58, 23, 908, DateTimeKind.Utc).AddTicks(1152),
+                            CreatedAt = new DateTime(2025, 1, 24, 13, 10, 41, 129, DateTimeKind.Utc).AddTicks(7917),
                             Description = "Rate for oversized freight shipments globally.",
                             ExpressDeliveryTimeMultiplier = 0.40000000000000002,
                             ExpressRateMultiplier = 2.0,
@@ -578,6 +795,198 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                             OvernightDeliveryTimeMultiplier = 0.10000000000000001,
                             OvernightRateMultiplier = 3.0
                         });
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Users.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RefreshTokenEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("nvarchar(21)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator<string>("UserType").HasValue("ApplicationUser");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Users.Admin", b =>
+                {
+                    b.HasBaseType("XpressShip.Domain.Entities.Users.ApplicationUser");
+
+                    b.HasDiscriminator().HasValue("Admin");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "76e77f40-c5d1-4cd5-bc00-f5425716e4ff",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "7f9f258c-76c1-4dec-a141-69bb4b3b68ce",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "nurlancreus@example.com",
+                            EmailConfirmed = false,
+                            FirstName = "Nurlan",
+                            LastName = "Shukurov",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "NURLANCREUS@EXAMPLE.COM",
+                            NormalizedUserName = "NURLANCREUS",
+                            PasswordHash = "AQAAAAIAAYagAAAAEB6csMyNikt9N9Kl0Xnb2ypN3SvqKq8KCSKa8jV5nNdeoUrYkVbw4IIdhhroM0QHZQ==",
+                            PhoneNumber = "+994513456776",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "3f52031a-242c-4c65-891c-27830fbd368d",
+                            TwoFactorEnabled = false,
+                            UserName = "nurlancreus"
+                        });
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Users.Sender", b =>
+                {
+                    b.HasBaseType("XpressShip.Domain.Entities.Users.ApplicationUser");
+
+                    b.Property<Guid>("AddressId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeActivatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasIndex("AddressId");
+
+                    b.HasDiscriminator().HasValue("Sender");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Identity.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Users.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Users.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Identity.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("XpressShip.Domain.Entities.Users.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Users.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("XpressShip.Domain.Entities.Address", b =>
@@ -608,13 +1017,23 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.Navigation("Country");
                 });
 
+            modelBuilder.Entity("XpressShip.Domain.Entities.Payment", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Shipment", "Shipment")
+                        .WithOne("Payment")
+                        .HasForeignKey("XpressShip.Domain.Entities.Payment", "ShipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shipment");
+                });
+
             modelBuilder.Entity("XpressShip.Domain.Entities.Shipment", b =>
                 {
                     b.HasOne("XpressShip.Domain.Entities.ApiClient", "ApiClient")
                         .WithMany("Shipments")
                         .HasForeignKey("ApiClientId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("XpressShip.Domain.Entities.Address", "DestinationAddress")
                         .WithMany("ShipmentsDestination")
@@ -625,6 +1044,11 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.HasOne("XpressShip.Domain.Entities.Address", "OriginAddress")
                         .WithMany("ShipmentsOrigin")
                         .HasForeignKey("OriginAddressId");
+
+                    b.HasOne("XpressShip.Domain.Entities.Users.Sender", "Sender")
+                        .WithMany("Shipments")
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("XpressShip.Domain.Entities.ShipmentRate", "Rate")
                         .WithMany("Shipments")
@@ -639,6 +1063,19 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.Navigation("OriginAddress");
 
                     b.Navigation("Rate");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Users.Sender", b =>
+                {
+                    b.HasOne("XpressShip.Domain.Entities.Address", "Address")
+                        .WithMany()
+                        .HasForeignKey("AddressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Address");
                 });
 
             modelBuilder.Entity("XpressShip.Domain.Entities.Address", b =>
@@ -666,7 +1103,17 @@ namespace XpressShip.Infrastructure.Persistence.Migrations
                     b.Navigation("Cities");
                 });
 
+            modelBuilder.Entity("XpressShip.Domain.Entities.Shipment", b =>
+                {
+                    b.Navigation("Payment");
+                });
+
             modelBuilder.Entity("XpressShip.Domain.Entities.ShipmentRate", b =>
+                {
+                    b.Navigation("Shipments");
+                });
+
+            modelBuilder.Entity("XpressShip.Domain.Entities.Users.Sender", b =>
                 {
                     b.Navigation("Shipments");
                 });

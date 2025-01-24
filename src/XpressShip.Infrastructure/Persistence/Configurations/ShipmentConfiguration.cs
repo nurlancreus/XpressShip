@@ -48,6 +48,12 @@ namespace XpressShip.Infrastructure.Persistence.Configurations
                 .HasForeignKey(s => s.ApiClientId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            builder
+                .HasOne(s => s.Sender)
+                .WithMany(c => c.Shipments)
+                .HasForeignKey(s => s.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             builder.ToTable(s => s.HasCheckConstraint("CK_Shipment_EstimatedDate", "[EstimatedDate] > getdate()"));
         }
     }

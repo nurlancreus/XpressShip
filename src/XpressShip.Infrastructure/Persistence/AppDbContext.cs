@@ -1,15 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Entities.Base;
+using XpressShip.Domain.Entities.Identity;
+using XpressShip.Domain.Entities.Users;
 using XpressShip.Infrastructure.Persistence.Configurations;
 
 // add-migration init -OutputDir ./Persistence/Migrations
 
 namespace XpressShip.Infrastructure.Persistence
 {
-    public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+    public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
     {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,6 +38,8 @@ namespace XpressShip.Infrastructure.Persistence
             return base.SaveChangesAsync(cancellationToken);
         }
 
+        public DbSet<Admin> Admins { get; set; } 
+        public DbSet<Sender> Senders { get; set; }
         public DbSet<ApiClient> ApiClients { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<Address> Addresses { get; set; }
@@ -44,7 +50,7 @@ namespace XpressShip.Infrastructure.Persistence
 
         private void UpdateDateTimesWhileSavingInterceptor()
         {
-            var changedEntries = ChangeTracker.Entries<BaseEntity>().Where(e => e.State == EntityState.Modified || e.State == EntityState.Added);
+            var changedEntries = ChangeTracker.Entries<IBase>().Where(e => e.State == EntityState.Modified || e.State == EntityState.Added);
 
             foreach (var entry in changedEntries)
             {
