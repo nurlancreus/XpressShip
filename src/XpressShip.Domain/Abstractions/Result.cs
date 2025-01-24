@@ -26,6 +26,7 @@ namespace XpressShip.Domain.Abstractions
             }
 
             IsSuccess = false;
+            _value = default;
             Error = error;
         }
 

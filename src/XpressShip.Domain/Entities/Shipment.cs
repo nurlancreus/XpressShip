@@ -58,6 +58,31 @@ namespace XpressShip.Domain.Entities
             return new Shipment(weight, dimensions, method, note);
         }
 
+        public void Update(double? weight, string? dimensions, string? method, string? note)
+        {
+            if (weight is double newWeight && Weight != weight)
+            {
+                Weight = newWeight;
+            }
+
+            if (dimensions is not null && Dimensions != dimensions)
+            {
+                Dimensions = dimensions;
+            }
+
+            if (!string.IsNullOrEmpty(method))
+            {
+                var shipmentMethod = method.EnsureEnumValueDefined<ShipmentMethod>();
+
+                if (shipmentMethod != Method) Method = shipmentMethod;
+            }
+
+            if (!string.IsNullOrEmpty(note) && Note != note)
+            {
+                Note = note;
+            }
+        }
+
         public void MakePending()
         {
             Status = ShipmentStatus.Pending;
@@ -86,8 +111,6 @@ namespace XpressShip.Domain.Entities
             Status = ShipmentStatus.Delivered;
             EstimatedDate = null;
         }
-
-
         public decimal CalculateShippingCost()
         {
             Rate.EnsureNonNull(nameof(Rate));
