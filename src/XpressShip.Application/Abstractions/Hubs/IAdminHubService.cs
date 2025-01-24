@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XpressShip.Application.Interfaces.Hubs
+namespace XpressShip.Application.Abstractions.Hubs
 {
     public interface IAdminHubService
     {

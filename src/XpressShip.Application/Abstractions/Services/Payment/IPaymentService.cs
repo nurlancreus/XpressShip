@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using XpressShip.Domain.Entities;
 using PaymentEntity = XpressShip.Domain.Entities.Payment;
 
-namespace XpressShip.Application.Interfaces.Services.Payment
+namespace XpressShip.Application.Abstractions.Services.Payment
 {
     public interface IPaymentService
     {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Domain.Enums;
 
-namespace XpressShip.Application.Interfaces.Hubs
+namespace XpressShip.Application.Abstractions.Hubs
 {
     public interface IPaymentHubService
     {

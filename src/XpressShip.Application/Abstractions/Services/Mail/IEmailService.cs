@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using XpressShip.Application.DTOs.Mail;
 using XpressShip.Domain.Enums;
 
-namespace XpressShip.Application.Interfaces.Services.Mail
+namespace XpressShip.Application.Abstractions.Services.Mail
 {
     public interface IEmailService
     {

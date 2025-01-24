@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Domain.Entities;
 
-namespace XpressShip.Application.Interfaces.Repositories
+namespace XpressShip.Application.Abstractions.Repositories
 {
     public interface ICountryRepository : IRepository<Country>
     {

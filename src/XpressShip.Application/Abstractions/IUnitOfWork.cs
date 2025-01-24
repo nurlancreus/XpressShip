@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XpressShip.Application.Interfaces
+namespace XpressShip.Application.Abstractions
 {
     public interface IUnitOfWork : IDisposable
     {

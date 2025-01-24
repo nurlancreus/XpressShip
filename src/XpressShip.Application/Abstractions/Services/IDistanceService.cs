@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Domain.Entities;
 
-namespace XpressShip.Application.Interfaces.Services
+namespace XpressShip.Application.Abstractions.Services
 {
     public interface IDistanceService
     {

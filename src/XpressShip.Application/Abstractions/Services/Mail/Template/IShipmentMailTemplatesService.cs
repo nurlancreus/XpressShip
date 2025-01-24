@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XpressShip.Application.Interfaces.Services.Mail.Template
+namespace XpressShip.Application.Abstractions.Services.Mail.Template
 {
     public interface IShipmentMailTemplatesService
     {
