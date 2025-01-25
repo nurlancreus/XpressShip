@@ -10,6 +10,7 @@ namespace XpressShip.Application.Abstractions.Services.Session
     public interface IJwtSession
     {
         Result<bool> IsUserAuth();
+        Result<bool> IsUserActive();
         Result<bool> IsSuperAdminAuth();
         Result<bool> IsAdminAuth();
         Result<bool> IsRolesAuth(IEnumerable<string> roleNames);

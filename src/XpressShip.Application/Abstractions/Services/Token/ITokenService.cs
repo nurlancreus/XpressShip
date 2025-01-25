@@ -12,8 +12,10 @@ namespace XpressShip.Application.Abstractions.Services.Token
 {
     public interface ITokenService
     {
-        Task<Result<TokenDTO>> CreateAccessTokenAsync(ApplicationUser user);
-        Task<Result<string>> CreateRefreshTokenAsync();
+        Task UpdateRefreshTokenAsync(string refreshToken, ApplicationUser user, DateTime accessTokenEndDate);
+        Task<Result<TokenDTO>> GetTokenAsync(ApplicationUser user);
+        Task<Result<string>> CreateAccessTokenAsync(ApplicationUser user);
+        Result<string> CreateRefreshToken();
         Result<ClaimsPrincipal> GetPrincipalFromAccessToken(string? accessToken);
     }
 }

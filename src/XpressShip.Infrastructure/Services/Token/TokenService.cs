@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -29,19 +30,12 @@ namespace XpressShip.Infrastructure.Services.Token
             _refreshSettings = options.Value.Refresh;
             _userManager = userManager;
         }
-        public async Task<Result<TokenDTO>> CreateAccessTokenAsync(ApplicationUser user)
+        public async Task<Result<string>> CreateAccessTokenAsync(ApplicationUser user)
         {
-            var lifeTime = _accessSettings.AccessTokenLifeTimeInMinutes;
-
-            TokenDTO token = new()
-            {
-                ExpiresAt = DateTime.UtcNow.AddMinutes(lifeTime),
-            };
-
-            SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(_accessSettings.SecurityKey));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_accessSettings.SecurityKey));
 
             // Create the encrypted credentials.
-            SigningCredentials signingCredentials = new(securityKey, SecurityAlgorithms.HmacSha256);
+            var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new List<Claim>()
             {
@@ -52,7 +46,8 @@ namespace XpressShip.Infrastructure.Services.Token
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // JWT unique ID (JTI)
                 new(JwtRegisteredClaimNames.Iat, new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString()), // Issued at (Unix timestamp)
                 new(ClaimTypes.NameIdentifier, user.Id), // Unique name identifier of the user (id)
-                new(ClaimTypes.Email, user.Email!) // Email of the user
+                new(ClaimTypes.Email, user.Email!), // Email of the user
+                new("IsActive", user.IsActive.ToString()) // Include the IsActive field as a custom claim
             };
 
             var userRoles = await _userManager.GetRolesAsync(user);
@@ -63,42 +58,58 @@ namespace XpressShip.Infrastructure.Services.Token
             }
 
             // Set the token's configurations.
-            JwtSecurityToken securityToken = new(
+            var securityToken = new JwtSecurityToken(
                 audience: _accessSettings.Audience,
                 issuer: _accessSettings.Issuer,
-                expires: token.ExpiresAt,
+                expires: DateTime.UtcNow.AddMinutes(_accessSettings.AccessTokenLifeTimeInMinutes),
                 notBefore: DateTime.UtcNow,
                 signingCredentials: signingCredentials,
                 claims: claims
             );
 
             // Create an instance of the token handler class.
-            JwtSecurityTokenHandler tokenHandler = new();
-            token.AccessToken = tokenHandler.WriteToken(securityToken);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var accessToken = tokenHandler.WriteToken(securityToken);
 
-            // Generate the refresh token.
-            var refreshTokenResult = await CreateRefreshTokenAsync();
+            return Result<string>.Success(accessToken);
+        }
+
+        public Result<string> CreateRefreshToken()
+        {
+            byte[] number = new byte[64];
+
+            using RandomNumberGenerator random = RandomNumberGenerator.Create();
+            random.GetBytes(number);
+
+            var token = Convert.ToBase64String(number);
+
+            return Result<string>.Success(token);
+        }
+
+        public async Task<Result<TokenDTO>> GetTokenAsync(ApplicationUser user)
+        {
+            var token = new TokenDTO();
+
+            // Create the access token
+            var accessTokenResult = await CreateAccessTokenAsync(user);
+
+            if (!accessTokenResult.IsSuccess) return Result<TokenDTO>.Failure(Error.UnexpectedError("Could not create access token."));
+
+            var accessToken = accessTokenResult.Value;
+            var accessTokenEndDate = DateTime.UtcNow.AddMinutes(_accessSettings.AccessTokenLifeTimeInMinutes);
+
+            // Create the refresh token
+            var refreshTokenResult = CreateRefreshToken();
 
             if (!refreshTokenResult.IsSuccess) return Result<TokenDTO>.Failure(Error.UnexpectedError("Could not create refresh token."));
 
-            token.RefreshToken = refreshTokenResult.Value;
+            var refreshToken = refreshTokenResult.Value;
+
+            token.AccessToken = accessToken;
+            token.ExpiresAt = accessTokenEndDate;
+            token.RefreshToken = refreshToken;
 
             return Result<TokenDTO>.Success(token);
-        }
-
-        public async Task<Result<string>> CreateRefreshTokenAsync()
-        {
-            var token = await Task.Run(() =>
-            {
-                byte[] number = new byte[64];
-
-                using RandomNumberGenerator random = RandomNumberGenerator.Create();
-                random.GetBytes(number);
-
-                return Convert.ToBase64String(number);
-            });
-
-            return Result<string>.Success(token);
         }
 
         public Result<ClaimsPrincipal> GetPrincipalFromAccessToken(string? accessToken)
@@ -109,7 +120,7 @@ namespace XpressShip.Infrastructure.Services.Token
                 ValidAudience = _accessSettings.Audience,
                 ValidateIssuer = true,
                 ValidIssuer = _accessSettings.Issuer,
-
+                
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_accessSettings.SecurityKey)),
 
@@ -126,6 +137,16 @@ namespace XpressShip.Infrastructure.Services.Token
             }
 
             return Result<ClaimsPrincipal>.Success(principal);
+        }
+
+        public async Task UpdateRefreshTokenAsync(string refreshToken, ApplicationUser user, DateTime accessTokenEndDate)
+        {
+            var refreshTokenEndDate = accessTokenEndDate.AddMinutes(_refreshSettings.RefreshTokenLifeTimeInMinutes);
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenEndDate = refreshTokenEndDate;
+
+            await _userManager.UpdateAsync(user);
         }
     }
 }

@@ -2,83 +2,52 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Domain.Abstractions;
 
 namespace XpressShip.Infrastructure.Services.Session
 {
+    // FIND A WAY TO INVALIDATE TOKEN WHEN CLAIMS HAVE CHANGED
     public class JwtSession(IHttpContextAccessor httpContextAccessor) : IJwtSession
     {
         private readonly ClaimsPrincipal? _claimsPrincipal = httpContextAccessor?.HttpContext?.User;
 
+        private enum AppClaimType : byte
+        {
+            Id,
+            Email,
+            UserName,
+            IsActive
+        }
+
         public Result<IEnumerable<string>> GetRoles()
         {
+            if (_claimsPrincipal == null)
+                return Result<IEnumerable<string>>.Failure(Error.UnauthorizedError("User is not authorized"));
+
             var isUserAuthResult = IsUserAuth();
 
             if (!isUserAuthResult.IsSuccess) return Result<IEnumerable<string>>.Failure(isUserAuthResult.Error);
 
-            var roleNames = _claimsPrincipal!.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+            var isUserActiveResult = IsUserActive();
+
+            if (!isUserActiveResult.IsSuccess) return Result<IEnumerable<string>>.Failure(isUserActiveResult.Error);
+
+            var roleNames = _claimsPrincipal.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
             return Result<IEnumerable<string>>.Success(roleNames);
         }
 
-        public Result<string> GetUserEmail()
-        {
-            var isUserAuthResult = IsUserAuth();
+        public Result<string> GetUserEmail() => GetClaim(AppClaimType.Email);
 
-            if (!isUserAuthResult.IsSuccess) return Result<string>.Failure(isUserAuthResult.Error);
+        public Result<string> GetUserId() => GetClaim(AppClaimType.Id);
 
-            var emailClaim = _claimsPrincipal!.FindFirst(ClaimTypes.Email)?.Value;
+        public Result<string> GetUserName() => GetClaim(AppClaimType.UserName);
 
-            if (emailClaim is null) return Result<string>.Failure(Error.UnauthorizedError("Email claim is missing in the claim"));
+        public Result<bool> IsSuperAdminAuth() => IsRolesAuth(["SuperAdmin"]);
 
-            return Result<string>.Success(emailClaim);
-        }
-
-        public Result<string> GetUserId()
-        {
-            var isUserAuthResult = IsUserAuth();
-
-            if (!isUserAuthResult.IsSuccess) return Result<string>.Failure(isUserAuthResult.Error);
-
-            var idClaim = _claimsPrincipal!.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (idClaim is null) return Result<string>.Failure(Error.UnauthorizedError("Id claim is missing in the claim"));
-
-            return Result<string>.Success(idClaim);
-        }
-
-        public Result<string> GetUserName()
-        {
-            var isUserAuthResult = IsUserAuth();
-
-            if (!isUserAuthResult.IsSuccess) return Result<string>.Failure(isUserAuthResult.Error);
-
-            var nameClaim = _claimsPrincipal!.FindFirst(ClaimTypes.Name)?.Value;
-
-            if (nameClaim is null) return Result<string>.Failure(Error.UnauthorizedError("Username claim is missing in the claim"));
-
-            return Result<string>.Success(nameClaim);
-        }
-
-        public Result<bool> IsAdminAuth()
-        {
-            var userRolesResult = GetRoles();
-
-            if (!userRolesResult.IsSuccess) return Result<bool>.Failure(userRolesResult.Error);
-
-            var userRoles = userRolesResult.Value;
-
-            var isAdminOrSuperAdminDefined = userRoles.Contains("Admin") || userRoles.Contains("SuperAdmin");
-
-            if (!isAdminOrSuperAdminDefined) return Result<bool>.Failure(Error.UnauthorizedError("User is not authorized"));
-
-            return Result<bool>.Success(true);
-        }
+        public Result<bool> IsAdminAuth() => IsRolesAuth(["SuperAdmin", "Admin"]);
 
         public Result<bool> IsRolesAuth(IEnumerable<string> roleNames)
         {
@@ -95,26 +64,69 @@ namespace XpressShip.Infrastructure.Services.Session
             return Result<bool>.Success(true);
         }
 
-        public Result<bool> IsSuperAdminAuth()
+        public Result<bool> IsUserAuth()
         {
-            var userRolesResult = GetRoles();
-
-            if (!userRolesResult.IsSuccess) return Result<bool>.Failure(userRolesResult.Error);
-
-            var userRoles = userRolesResult.Value;
-
-            var isSuperAdminDefined = userRoles.Contains("SuperAdmin");
-
-            if (!isSuperAdminDefined) return Result<bool>.Failure(Error.UnauthorizedError("User is not authorized"));
+            if (!(_claimsPrincipal?.Identity?.IsAuthenticated ?? false))
+                return Result<bool>.Failure(Error.UnauthorizedError("User is not authorized"));
 
             return Result<bool>.Success(true);
         }
 
-        public Result<bool> IsUserAuth()
+        public Result<bool> IsUserActive()
         {
-            if (!(_claimsPrincipal?.Identity?.IsAuthenticated ?? false)) return Result<bool>.Failure(Error.UnauthorizedError("User is not authorized"));
+            var claimResult = GetClaim(AppClaimType.IsActive);
+
+            if (!claimResult.IsSuccess) return Result<bool>.Failure(claimResult.Error);
+
+            if (!bool.TryParse(claimResult.Value, out bool isActive))
+                return Result<bool>.Failure(Error.BadRequestError("Invalid format for IsActive claim"));
+
+            if (!isActive)
+                return Result<bool>.Failure(Error.UnauthorizedError("User is not authorized"));
 
             return Result<bool>.Success(true);
+        }
+
+        private Result<string> GetClaim(AppClaimType claimType)
+        {
+            if (_claimsPrincipal == null)
+                return Result<string>.Failure(Error.UnauthorizedError("User is not authorized"));
+
+            if (!IsUserAuth().IsSuccess)
+                return Result<string>.Failure(Error.UnauthorizedError("User is not authorized"));
+
+            string? claimValue, errorMessage;
+
+            switch (claimType)
+            {
+                case AppClaimType.Id:
+                    claimValue = _claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+                    errorMessage = "Id claim is missing in the claim";
+                    break;
+
+                case AppClaimType.Email:
+                    claimValue = _claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+                    errorMessage = "Email claim is missing in the claim";
+                    break;
+
+                case AppClaimType.UserName:
+                    claimValue = _claimsPrincipal.FindFirstValue(ClaimTypes.Name);
+                    errorMessage = "Name claim is missing in the claim";
+                    break;
+
+                case AppClaimType.IsActive:
+                    claimValue = _claimsPrincipal.FindFirstValue("IsActive");
+                    errorMessage = "IsActive claim is missing in the claim";
+                    break;
+
+                default:
+                    return Result<string>.Failure(Error.BadRequestError("Claim type is not valid"));
+            }
+
+            if (claimValue == null)
+                return Result<string>.Failure(Error.UnauthorizedError(errorMessage));
+
+            return Result<string>.Success(claimValue);
         }
     }
 }

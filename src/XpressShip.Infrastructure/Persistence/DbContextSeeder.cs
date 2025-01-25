@@ -63,6 +63,7 @@ namespace XpressShip.Infrastructure.Persistence
             superAdminUser.Id = Guid.NewGuid().ToString();
             superAdminUser.NormalizedUserName = "NURLANCREUS";
             superAdminUser.NormalizedEmail = "NURLANCREUS@EXAMPLE.COM";
+            superAdminUser.IsActive = true;
 
             superAdminUser.PasswordHash = passwordHasher.HashPassword(superAdminUser, "qwerty1234");
 
