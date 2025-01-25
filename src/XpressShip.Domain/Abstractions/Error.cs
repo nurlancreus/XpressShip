@@ -23,6 +23,15 @@ namespace XpressShip.Domain.Abstractions
             StatusCode = statusCode;
             Message = message;
         }
+
+        public static Error RegisterError(string message = "You could not register. Wrong credentials")
+        {
+            return new(nameof(ErrorType.Register), HttpStatusCode.BadRequest, message);
+        }
+        public static Error LoginError(string message = "You could not login. Wrong credentials")
+        {
+            return new(nameof(ErrorType.Login), HttpStatusCode.BadRequest, message);
+        }
         public static Error NotFoundError(string model = "Entity")
         {
             return new(nameof(ErrorType.NotFound), HttpStatusCode.NotFound, $"{model} Not Found");
@@ -30,6 +39,11 @@ namespace XpressShip.Domain.Abstractions
         public static Error ValidationError(string message = "Validation error happened")
         {
             return new(nameof(ErrorType.Validation), HttpStatusCode.BadRequest, message);
+        }
+
+        public static Error BadRequestError(string message = "Invalid request or parameters.")
+        {
+            return new(nameof(ErrorType.BadRequest), HttpStatusCode.BadRequest, message);
         }
 
         public static Error ConflictError(string message = "The data provided conflicts with existing data.")

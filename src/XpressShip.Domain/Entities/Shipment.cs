@@ -35,7 +35,7 @@ namespace XpressShip.Domain.Entities
 
         public Payment? Payment { get; set; }
 
-        public Address Origin => (OriginAddress ?? Sender?.Address ?? ApiClient?.Address)!;
+        private Address Origin => (OriginAddress ?? Sender?.Address ?? ApiClient?.Address)!;
 
         private Shipment() { }
 

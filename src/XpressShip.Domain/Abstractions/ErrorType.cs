@@ -10,6 +10,9 @@ namespace XpressShip.Domain.Abstractions
     {
         None,
         Unauthorized,
+        Register,
+        Login,
+        BadRequest,
         Forbidden,
         NotFound,
         Conflict,

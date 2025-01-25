@@ -19,6 +19,8 @@ namespace XpressShip.Domain.Entities.Users
         public DateTime? RefreshTokenEndDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime? DeActivatedAt { get; set; }
 
         protected ApplicationUser() { }
 
@@ -37,6 +39,8 @@ namespace XpressShip.Domain.Entities.Users
             UserName = userName;
             Email = email;
             PhoneNumber = phoneNumber;
+
+            IsActive = false;
         }
 
         public static ApplicationUser Create(string firstName, string lastName, string userName, string email, string phoneNumber)

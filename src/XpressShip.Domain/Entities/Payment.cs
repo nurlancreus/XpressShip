@@ -17,10 +17,7 @@ namespace XpressShip.Domain.Entities
         public Guid ShipmentId { get; set; }
         public Shipment Shipment { get; set; } = null!;
 
-        private Payment()
-        {
-
-        }
+        private Payment() { }
 
         private Payment(PaymentMethod method, PaymentCurrency currency)
         {
@@ -32,7 +29,6 @@ namespace XpressShip.Domain.Entities
         public static Payment Create(PaymentMethod method, PaymentCurrency currency)
         {
             return new Payment(method, currency);
-
         }
 
         public void MakeComplete() => Status = PaymentStatus.Success;

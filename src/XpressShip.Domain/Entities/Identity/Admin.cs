@@ -24,11 +24,27 @@ namespace XpressShip.Domain.Entities.Users
             UserName = userName;
             Email = email;
             PhoneNumber = phoneNumber;
+
+            IsActive = false;
         }
 
         public static new Admin Create(string firstName, string lastName, string userName, string email, string phoneNumber)
         {
             return new Admin(firstName, lastName, userName, email, phoneNumber);
+        }
+
+        public void Toggle()
+        {
+            if (IsActive)
+            {
+                IsActive = false;
+                DeActivatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                IsActive = true;
+                DeActivatedAt = null;
+            }
         }
     }
 }

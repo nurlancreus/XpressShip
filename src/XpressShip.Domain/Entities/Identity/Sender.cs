@@ -11,8 +11,6 @@ namespace XpressShip.Domain.Entities.Users
     {
         public Address Address { get; set; } = null!;
         public ICollection<Shipment> Shipments { get; set; } = [];
-        public bool IsActive { get; set; }
-        public DateTime? DeActivatedAt { get; set; }
         private Sender(string firstName, string lastName, string userName, string email, string phoneNumber)
         {
             firstName.EnsureNonEmpty(nameof(firstName));
@@ -28,6 +26,8 @@ namespace XpressShip.Domain.Entities.Users
             UserName = userName;
             Email = email;
             PhoneNumber = phoneNumber;
+
+            IsActive = false;
         }
 
         public static new Sender Create(string firstName, string lastName, string userName, string email, string phoneNumber)
