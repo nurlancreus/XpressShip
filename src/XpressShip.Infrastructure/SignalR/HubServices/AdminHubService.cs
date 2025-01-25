@@ -20,6 +20,16 @@ namespace XpressShip.Infrastructure.SignalR.HubServices
             return _hubContext.Clients.Group(GroupNames.AdminGroup).SendAsync(ReceiveFunctionNames.AdminHub.AdminNewApiClientMessage, message, cancellationToken);
         }
 
+        public Task AdminNewAdminMessageAsync(string message, CancellationToken cancellationToken = default)
+        {
+            return _hubContext.Clients.Group(GroupNames.AdminGroup).SendAsync(ReceiveFunctionNames.AdminHub.AdminNewAdminMessage, message, cancellationToken);
+        }
+
+        public Task AdminNewSenderMessageAsync(string message, CancellationToken cancellationToken = default)
+        {
+            return _hubContext.Clients.Group(GroupNames.AdminGroup).SendAsync(ReceiveFunctionNames.AdminHub.AdminNewSenderMessage, message, cancellationToken);
+        }
+
         public Task AdminNewApiClientMessageAsync(string message, CancellationToken cancellationToken = default)
         {
             return _hubContext.Clients.Group(GroupNames.AdminGroup).SendAsync(ReceiveFunctionNames.AdminHub.AdminNewApiClientMessage, message, cancellationToken);

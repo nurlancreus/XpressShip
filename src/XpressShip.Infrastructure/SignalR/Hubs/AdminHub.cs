@@ -14,7 +14,7 @@ namespace XpressShip.Infrastructure.SignalR.Hubs
         {
             var user = Context.User;
 
-            if (user?.IsInRole("Admin") ?? false)
+            if (user != null && (user.IsInRole("Admin") || user.IsInRole("SuperAdmin")))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, GroupNames.AdminGroup);
             }
