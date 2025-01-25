@@ -99,11 +99,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                             .Select(c => new { c.Name, c.Cities })
                             .FirstOrDefaultAsync(c => c.Name == originAddress.Country, cancellationToken);
 
-                country = country.EnsureNonNull();
+                if (country is null) return Result<ShipmentDTO>.Failure(Error.BadRequestError("Country is not supported"));
 
                 var city = country.Cities.FirstOrDefault(c => c.Name == originAddress.City);
 
-                city = city.EnsureNonNull();
+                if (city is null) return Result<ShipmentDTO>.Failure(Error.BadRequestError("City is not supported"));
 
                 shipment.OriginAddress.City = city;
             }
@@ -126,11 +126,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                             .Select(c => new { c.Name, c.Cities })
                             .FirstOrDefaultAsync(c => c.Name == destinationAddress.Country, cancellationToken);
 
-                country = country.EnsureNonNull();
+                if (country is null) return Result<ShipmentDTO>.Failure(Error.BadRequestError("Country is not supported"));
 
                 var city = country.Cities.FirstOrDefault(c => c.Name == destinationAddress.City);
 
-                city = city.EnsureNonNull();
+                if (city is null) return Result<ShipmentDTO>.Failure(Error.BadRequestError("City is not supported"));
 
                 shipment.DestinationAddress.City = city;
             }

@@ -24,7 +24,7 @@ namespace XpressShip.Application.Features.ApiClients.DTOs
         public string PostalCode { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public AddressDTO? Address { get; set; }
-        public ICollection<ShipmentDTO?> Shipments { get; set; } = []; 
+        public IEnumerable<ShipmentDTO> Shipments { get; set; } = []; 
         public ApiClientDTO() { }
 
         public ApiClientDTO(ApiClient apiClient)
@@ -41,7 +41,7 @@ namespace XpressShip.Application.Features.ApiClients.DTOs
             PostalCode = apiClient.Address.PostalCode;
             CreatedAt = apiClient.CreatedAt;
             Address = new AddressDTO(apiClient.Address);
-            Shipments = apiClient.Shipments.Select(s => s != null ? new ShipmentDTO(s) : null).ToList();
+            Shipments = apiClient.Shipments.Count > 0 ? apiClient.Shipments.Select(s =>  new ShipmentDTO(s)) : [];
         }
     }
 }

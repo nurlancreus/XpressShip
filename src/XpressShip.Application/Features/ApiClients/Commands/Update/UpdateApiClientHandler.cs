@@ -9,6 +9,7 @@ using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Features.ApiClients.DTOs;
+using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -76,11 +77,12 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
                                 .Select(c => new { c.Name, c.Cities })
                                 .FirstOrDefaultAsync(c => c.Name == request.Address.Country, cancellationToken);
 
-                country = country.EnsureNonNull();
+                if (country is null) return Result<ApiClientDTO>.Failure(Error.BadRequestError("Country is not supported"));
 
                 var city = country.Cities.FirstOrDefault(c => c.Name == request.Address.City);
 
-                city = city.EnsureNonNull();
+                if (city is null) return Result<ApiClientDTO>.Failure(Error.BadRequestError("City is not supported"));
+
                 address.City = city;
 
                 apiClient.Address = address;
