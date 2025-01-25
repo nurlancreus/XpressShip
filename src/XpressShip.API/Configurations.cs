@@ -84,6 +84,7 @@ namespace XpressShip.API
                      ValidIssuer = builder.Configuration["Token:Access:Issuer"],
                      ValidateLifetime = true,
                      ValidateIssuerSigningKey = true,
+                     
                      IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Token:Access:SecurityKey"]!)),
 
                      LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires != null && expires > DateTime.UtcNow,
