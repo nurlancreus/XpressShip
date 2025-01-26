@@ -20,27 +20,27 @@ namespace XpressShip.Infrastructure.SignalR.HubServices
             _hubContext = hubContext;
         }
 
-        public async Task ShipmentShippedMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task ShipmentShippedMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.ShipmentHub.ShipmentShippedMessage, message, cancellationToken);
         }
 
-        public async Task ShipmentCanceledMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task ShipmentCanceledMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.ShipmentHub.ShipmentCanceledMessage, message, cancellationToken);
         }
 
-        public async Task ShipmentDelayedMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task ShipmentDelayedMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.ShipmentHub.ShipmentDelayedMessage, message, cancellationToken);
         }
 
-        public async Task ShipmentDeliveredMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task ShipmentDeliveredMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.ShipmentHub.ShipmentDeliveredMessage, message, cancellationToken);
         }
 
-        public async Task ShipmentFailedMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task ShipmentFailedMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.ShipmentHub.ShipmentFailedMessage, message, cancellationToken);
         }

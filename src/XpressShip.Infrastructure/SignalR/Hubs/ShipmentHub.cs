@@ -17,13 +17,13 @@ namespace XpressShip.Infrastructure.SignalR.Hubs
             if ((Context.User?.Identity?.IsAuthenticated ?? false) && Context.UserIdentifier is string userId)
             {
 
-                await Groups.AddToGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(userId, UserType.Account));
+                await Groups.AddToGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(userId, InitiatorType.Account));
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, GroupNames.AdminGroup);
             }
             else if (!string.IsNullOrEmpty(apiKey))
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(apiKey, UserType.ApiClient));
+                await Groups.AddToGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(apiKey, InitiatorType.ApiClient));
                 await Groups.AddToGroupAsync(Context.ConnectionId, GroupNames.AdminGroup);
             }
         }
@@ -34,13 +34,13 @@ namespace XpressShip.Infrastructure.SignalR.Hubs
             var userId = Context.UserIdentifier;
             if (!string.IsNullOrEmpty(userId))
             {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(userId, UserType.Account));
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(userId, InitiatorType.Account));
             }
 
             var apiKey = Context.GetHttpContext()?.Request.Headers["X-Api-Key"].FirstOrDefault();
             if (!string.IsNullOrEmpty(apiKey))
             {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(apiKey, UserType.ApiClient));
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, Helper.GetUserGroupName(apiKey, InitiatorType.ApiClient));
             }
 
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupNames.AdminGroup);

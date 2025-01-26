@@ -20,23 +20,23 @@ namespace XpressShip.Infrastructure.SignalR.HubServices
             _hubContext = hubContext;
         }
 
-        public async Task PaymentCanceledMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task PaymentCanceledMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.PaymentHub.PaymentCanceledMessage, message, cancellationToken);
         }
 
-        public async Task PaymentFailedMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task PaymentFailedMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.PaymentHub.PaymentFailedMessage, message, cancellationToken);
         }
 
-        public async Task PaymentRefundedMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task PaymentRefundedMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.PaymentHub.PaymentRefundedMessage, message, cancellationToken);
         }
 
-        public async Task PaymentSucceededMessageAsync(string identifier, string message, UserType userType = UserType.ApiClient, CancellationToken cancellationToken = default)
+        public async Task PaymentSucceededMessageAsync(string identifier, string message, InitiatorType userType = InitiatorType.ApiClient, CancellationToken cancellationToken = default)
         {
             await _hubContext.Clients.Groups([GroupNames.AdminGroup, Helper.GetUserGroupName(identifier, userType)]).SendAsync(ReceiveFunctionNames.PaymentHub.PaymentSucceededMessage, message, cancellationToken);
         }

@@ -10,12 +10,12 @@ namespace XpressShip.Infrastructure.SignalR
 {
     public static class Helper
     {
-        public static string GetUserGroupName(string identifier, UserType userType)
+        public static string GetUserGroupName(string identifier, InitiatorType userType)
         {
             return userType switch
             {
-                UserType.ApiClient => $"{GroupNames.ApiClientGroup}_{identifier}",
-                UserType.Account => $"{GroupNames.AccountGroup}_{identifier}",
+                InitiatorType.ApiClient => $"{GroupNames.ApiClientGroup}_{identifier}",
+                InitiatorType.Account => $"{GroupNames.AccountGroup}_{identifier}",
                 _ => $"{GroupNames.ApiClientGroup}_{identifier}"
             };
         }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XpressShip.Domain;
 using XpressShip.Domain.Entities;
 
 namespace XpressShip.Infrastructure.Persistence.Configurations
@@ -14,6 +15,10 @@ namespace XpressShip.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<ApiClient> builder)
         {
             builder.HasKey(c => c.Id);
+
+            builder
+                .Property(c => c.CompanyName)
+                .HasMaxLength(Constants.ApiClientCompanyNameMaxLength);
 
             builder
                 .HasIndex(c => c.Email)

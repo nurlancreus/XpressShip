@@ -12,7 +12,7 @@ using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Infrastructure.Services.Session
 {
-    public class ApiClientSessionService(IHttpContextAccessor httpContextAccessor) : IApiClientSessionService
+    public class ApiClientSessionService(IHttpContextAccessor httpContextAccessor) : IApiClientSession
     {
         private readonly IHeaderDictionary? _headers = httpContextAccessor?.HttpContext?.Request.Headers;
 
