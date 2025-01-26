@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using FluentValidation.AspNetCore;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -29,6 +31,7 @@ using XpressShip.Infrastructure.Services.Payment.Stripe;
 using XpressShip.Infrastructure.Services.Session;
 using XpressShip.Infrastructure.Services.Validation;
 using XpressShip.Infrastructure.SignalR;
+using XpressShip.Application.Features.ApiClients.Commands.Create;
 
 namespace XpressShip.API
 {
@@ -99,6 +102,9 @@ namespace XpressShip.API
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
 
+            // Add Exception Handler
+            builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
             // Add ProblemDetails services
             builder.Services.AddProblemDetails();
 
@@ -112,6 +118,12 @@ namespace XpressShip.API
                 .MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
                 .EnableSensitiveDataLogging();
             });
+
+            // Register Fluent Validation
+            builder.Services.AddFluentValidationClientsideAdapters();
+
+            builder.Services
+                .AddValidatorsFromAssemblyContaining<CreateApiClientCommandValidator>();
 
             // Register SignalR
             builder.Services.RegisterSignalRServices();
@@ -137,9 +149,9 @@ namespace XpressShip.API
 
             // Register Services
             #region Register Client Services
-            builder.Services.AddScoped<IApiClientSessionService, ApiClientSessionService>();
+            builder.Services.AddScoped<IApiClientSession, ApiClientSessionService>();
             builder.Services.AddScoped<IAddressValidationService, AddressValidationService>();
-            builder.Services.AddScoped<IApiClientSessionService, ApiClientSessionService>();
+            builder.Services.AddScoped<IApiClientSession, ApiClientSessionService>();
             builder.Services.AddScoped<IJwtSession, JwtSession>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
 
