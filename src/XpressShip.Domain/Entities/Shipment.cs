@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Domain;
+using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities.Base;
 using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Enums;
@@ -117,14 +118,15 @@ namespace XpressShip.Domain.Entities
             DestinationAddress.EnsureNonNull(nameof(DestinationAddress));
 
             decimal baseCost = Rate.BaseRate;
-            decimal weightCost = CalculateWeightCost();
-            decimal volumeCost = CalculateSizeCost();
+
+            decimal weightCost = CalculateWeightCost(Weight, Rate);
+            decimal volumeCost = CalculateSizeCost(Dimensions, Rate);
 
             var distance = Origin.CalculateDistance(DestinationAddress);
 
-            decimal distanceCost = CalculateDistanceCost(distance);
+            decimal distanceCost = CalculateDistanceCost(distance, Rate);
 
-            decimal totalCost = CalculateDeliveryCost(baseCost + weightCost + volumeCost + distanceCost);
+            decimal totalCost = CalculateDeliveryCost(baseCost + weightCost + volumeCost + distanceCost, Method, Rate);
 
             var taxAppliedPrice = ApplyTax(totalCost);
 
@@ -140,59 +142,65 @@ namespace XpressShip.Domain.Entities
             return totalCost * (1 - taxRate);
         }
 
-        public decimal CalculateDeliveryCost(decimal subtotal)
+        public static decimal CalculateDeliveryCost(decimal subtotal, ShipmentMethod method, ShipmentRate rate)
         {
-            return Method switch
+            method.EnsureEnumValueDefined(nameof(method));
+            rate.EnsureNonNull();
+
+            return method switch
             {
                 ShipmentMethod.Standard => subtotal,
-                ShipmentMethod.Express => subtotal * (decimal)Rate.ExpressRateMultiplier,
-                ShipmentMethod.Overnight => subtotal * (decimal)Rate.OvernightRateMultiplier,
+                ShipmentMethod.Express => subtotal * (decimal)rate.ExpressRateMultiplier,
+                ShipmentMethod.Overnight => subtotal * (decimal)rate.OvernightRateMultiplier,
                 _ => subtotal
             };
         }
 
-        public decimal CalculateWeightCost()
+        public static decimal CalculateWeightCost(double weight, ShipmentRate rate)
         {
-            Rate.EnsureNonNull(nameof(Rate));
-            Weight.EnsureNonZero(nameof(Weight));
+            weight.EnsureNonZero(nameof(weight));
+            rate.EnsureNonNull(nameof(rate));
 
-            ValidationRules.ValidateWeight(Weight, Rate);
+            ValidationRules.ValidateWeight(weight, rate);
 
-            return (decimal)(Weight * Rate.BaseRateForKg);
+            return (decimal)(weight * rate.BaseRateForKg);
         }
 
-        public decimal CalculateDistanceCost(double distance)
+        public static decimal CalculateDistanceCost(double distance, ShipmentRate rate)
         {
-            Rate.EnsureNonNull(nameof(Rate));
+            rate.EnsureNonNull(nameof(Rate));
 
-            ValidationRules.ValidateDistance(distance, Rate);
+            ValidationRules.ValidateDistance(distance, rate);
 
-            return (decimal)(distance * Rate.BaseRateForKm);
+            return (decimal)(distance * rate.BaseRateForKm);
         }
 
-        public decimal CalculateSizeCost()
+        public static decimal CalculateSizeCost(string dimensions, ShipmentRate rate)
         {
-            int volume = CalculateVolume();
+            dimensions.EnsureNonEmpty(nameof(dimensions));
+            rate.EnsureNonNull(nameof(Rate));
 
-            return CalculateSizeCost(volume);
+            int volume = CalculateVolume(dimensions);
+
+            return CalculateSizeCost(volume, rate);
         }
 
-        public decimal CalculateSizeCost(int volume)
+        public static decimal CalculateSizeCost(int volume, ShipmentRate rate)
         {
-            Rate.EnsureNonNull(nameof(Rate));
+            rate.EnsureNonNull(nameof(Rate));
 
-            ValidationRules.ValidateVolume(volume, Rate);
+            ValidationRules.ValidateVolume(volume, rate);
 
-            return volume * (decimal)Rate.BaseRateForVolume;
+            return volume * (decimal)rate.BaseRateForVolume;
         }
 
-        public int CalculateVolume()
+        public static int CalculateVolume(string dimensions)
         {
-            Dimensions.EnsureNonEmpty(nameof(Dimensions));
+            dimensions.EnsureNonEmpty(nameof(dimensions));
 
-            ValidationRules.ValidateDimensions(Dimensions);
+            ValidationRules.ValidateDimensions(dimensions);
 
-            return Dimensions.Split('x').Select(int.Parse).Aggregate((x, y) => x * y);
+            return dimensions.Split('x').Select(int.Parse).Aggregate((x, y) => x * y);
         }
 
         public DateTime CalculateEstimatedDelivery()
@@ -217,6 +225,21 @@ namespace XpressShip.Domain.Entities
                 ShipmentMethod.Overnight => (int)Math.Ceiling(baseDays * Rate.OvernightDeliveryTimeMultiplier),
                 _ => baseDays
             };
+        }
+
+        public (InitiatorType initiatorType, string initiatorId) GetInitiatorTypeAndId()
+        {
+            if (ApiClient is null && Sender is null) throw new ArgumentNullException("Both Api Client and Sender cannot be null");
+            else if (ApiClient is not null && Sender is not null) throw new ArgumentException("Either Api Client or Sender should be null");
+
+            InitiatorType initiatorType = ApiClient is not null ? InitiatorType.ApiClient : InitiatorType.Account;
+
+            string? initiatorId = ApiClient?.ApiKey ?? Sender?.Id;
+
+            initiatorType.EnsureEnumValueDefined(nameof(initiatorType));
+            initiatorId = initiatorId.EnsureNonEmpty(nameof(initiatorId));
+
+            return (initiatorType, initiatorId);
         }
 
         private static int CalculateDefaultDeliveryTime(double distance)

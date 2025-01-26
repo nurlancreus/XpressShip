@@ -54,7 +54,7 @@ namespace XpressShip.Domain.Entities
             return CalculateDistance(Latitude, Longitude, destination.Latitude, destination.Longitude);
         }
 
-        private static double CalculateDistance(double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
+        public static double CalculateDistance(double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
         {
             const double EarthRadius = 6371.0; // Earth's radius in kilometers
 

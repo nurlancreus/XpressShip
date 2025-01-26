@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace XpressShip.Domain.Enums
 {
-    public enum UserType
+    public enum InitiatorType
     {
         ApiClient,
         Account
