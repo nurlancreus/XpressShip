@@ -7,7 +7,7 @@ using XpressShip.Domain.Abstractions;
 
 namespace XpressShip.Application.Abstractions.Services.Session
 {
-    public interface IApiClientSessionService
+    public interface IApiClientSession
     {
         Result<(string apiKey, string secretKey)> GetClientApiAndSecretKey();
         Result<string> GetApiKey();
