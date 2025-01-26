@@ -21,12 +21,12 @@ namespace XpressShip.Application.Features.Payments.Command.Create
 {
     public class CreatePaymentHandler : ICommandHandler<CreatePaymentCommand, PaymentDTO>
     {
-        private readonly IApiClientSessionService _clientSessionService;
+        private readonly IApiClientSession _clientSessionService;
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IPaymentService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public CreatePaymentHandler(IApiClientSessionService clientSessionService, IShipmentRepository shipmentRepository, IPaymentService paymentService, IUnitOfWork unitOfWork)
+        public CreatePaymentHandler(IApiClientSession clientSessionService, IShipmentRepository shipmentRepository, IPaymentService paymentService, IUnitOfWork unitOfWork)
         {
             _clientSessionService = clientSessionService;
             _shipmentRepository = shipmentRepository;

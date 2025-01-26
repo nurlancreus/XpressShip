@@ -37,6 +37,8 @@ namespace XpressShip.Application.Features.Payments.Handlers
             var payment = await _paymentRepository.Table
                                     .Include(p => p.Shipment)
                                         .ThenInclude(s => s.ApiClient)
+                                    .Include(p => p.Shipment)
+                                        .ThenInclude(s => s.Sender)
                                     .FirstOrDefaultAsync(p => p.TransactionId == notification.TransactionId, cancellationToken);
 
             if (payment is null) throw new Exception("Payment is null");
@@ -45,19 +47,19 @@ namespace XpressShip.Application.Features.Payments.Handlers
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var (initiatorType, initiatorId) = payment.Shipment.GetInitiatorTypeAndId();
+
             var recipientDetails = new RecipientDetailsDTO
             {
-                Email = payment.Shipment.ApiClient!.Email,
-                Name = payment.Shipment.ApiClient.CompanyName,
+                Email = (payment.Shipment.ApiClient?.Email ?? payment.Shipment.Sender?.Email)!,
+                Name = (payment.Shipment.ApiClient?.CompanyName ?? payment.Shipment.Sender?.UserName)!,
             };
 
             var body = _paymentMailTemplatesService.GeneratePaymentFailedEmail(payment.TransactionId, recipientDetails.Name);
 
             await _emailService.SendEmailAsync(recipientDetails, "Payment Failed", body);
 
-            var identifier = payment.Shipment.ApiClient?.ApiKey; // if null then take from sender
-
-            await _paymentHubService.PaymentFailedMessageAsync(identifier!, $"Payment with transaction ID {payment.TransactionId} is failed!", UserType.ApiClient, cancellationToken);
+            await _paymentHubService.PaymentFailedMessageAsync(initiatorId, $"Payment with transaction ID {payment.TransactionId} is failed!", initiatorType, cancellationToken);
         }
     }
 }

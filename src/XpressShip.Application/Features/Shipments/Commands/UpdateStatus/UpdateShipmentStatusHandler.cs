@@ -9,6 +9,7 @@ using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Mail;
 using XpressShip.Application.Abstractions.Services.Mail.Template;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.DTOs.Mail;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Responses;
@@ -23,6 +24,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
     public class UpdateShipmentStatusHandler : ICommandHandler<UpdateShipmentStatusCommand, ShipmentDTO>
     {
         private readonly IShipmentRepository _shipmentRepository;
+        private readonly IJwtSession _jwtSession;
         private readonly IShipmentMailTemplatesService _shipmentMailTemplatesService;
         private readonly IEmailService _emailService;
         private readonly IShipmentHubService _shipmentHubService;
@@ -30,12 +32,14 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 
         public UpdateShipmentStatusHandler(
             IShipmentRepository shipmentRepository,
+            IJwtSession jwtSession,
             IShipmentMailTemplatesService shipmentMailTemplatesService,
             IEmailService emailService,
             IShipmentHubService shipmentHubService,
             IUnitOfWork unitOfWork)
         {
             _shipmentRepository = shipmentRepository;
+            _jwtSession = jwtSession;
             _shipmentMailTemplatesService = shipmentMailTemplatesService;
             _emailService = emailService;
             _shipmentHubService = shipmentHubService;
@@ -44,21 +48,25 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 
         public async Task<Result<ShipmentDTO>> Handle(UpdateShipmentStatusCommand request, CancellationToken cancellationToken)
         {
+            var isAdminResult = _jwtSession.IsAdminAuth();
+
+            if (!isAdminResult.IsSuccess) return Result<ShipmentDTO>.Failure(isAdminResult.Error);
+
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
                                 .Include(s => s.OriginAddress)
                                 .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
+                                .Include(s => s.Sender)
+                                    .ThenInclude(s => s!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
             if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
-            UserType user = shipment.ApiClient is not null ? UserType.ApiClient : UserType.Account;
+            var (initiatorType, initiatorId) = shipment.GetInitiatorTypeAndId();
 
-            var identifier = shipment.ApiClient?.ApiKey; // if null then take from sender
-
-            var newStatus = request.Status.EnsureEnumValueDefined<ShipmentStatus>();
+            if (!Enum.TryParse<ShipmentStatus>(request.Status, true, out var newStatus)) return Result<ShipmentDTO>.Failure(Error.BadRequestError("Could not parse the enum"));
 
             string subject = "";
             string body = "";
@@ -79,11 +87,12 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                         Email = shipment.ApiClient!.Email,
                         Name = shipment.ApiClient!.CompanyName
                     };
+
                     body = _shipmentMailTemplatesService.GenerateShipmentDeliveredEmail(
                         shipment.TrackingNumber, recipientDetails.Name, DateTime.UtcNow);
                     subject = "Shipment Delivered";
 
-                    await _shipmentHubService.ShipmentDeliveredMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is successfully delivered!", user, cancellationToken);
+                    await _shipmentHubService.ShipmentDeliveredMessageAsync(initiatorId, $"Shipment with tracking code ({shipment.TrackingNumber}) is successfully delivered!", initiatorType, cancellationToken);
 
                     break;
 
@@ -99,7 +108,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                         shipment.TrackingNumber, recipientDetails.Name);
                     subject = "Shipment Canceled";
 
-                    await _shipmentHubService.ShipmentCanceledMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is canceled!", user, cancellationToken);
+                    await _shipmentHubService.ShipmentCanceledMessageAsync(initiatorId, $"Shipment with tracking code ({shipment.TrackingNumber}) is canceled!", initiatorType, cancellationToken);
                     break;
 
                 case ShipmentStatus.Shipped:
@@ -115,7 +124,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 
                     subject = "Shipment Shipped";
 
-                    await _shipmentHubService.ShipmentShippedMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is successfully shipped! Estimated Delivery Date: {(DateTime)shipment.EstimatedDate!:F}", user, cancellationToken);
+                    await _shipmentHubService.ShipmentShippedMessageAsync(initiatorId, $"Shipment with tracking code ({shipment.TrackingNumber}) is successfully shipped! Estimated Delivery Date: {(DateTime)shipment.EstimatedDate!:F}", initiatorType, cancellationToken);
                     break;
 
                 case ShipmentStatus.Failed:
@@ -131,7 +140,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 
                     subject = "Shipment Failed";
 
-                    await _shipmentHubService.ShipmentFailedMessageAsync(identifier!, $"Shipment with tracking code ({shipment.TrackingNumber}) is unfortunately failed!", user, cancellationToken);
+                    await _shipmentHubService.ShipmentFailedMessageAsync(initiatorId, $"Shipment with tracking code ({shipment.TrackingNumber}) is unfortunately failed!", initiatorType, cancellationToken);
                     break;
 
                 default:

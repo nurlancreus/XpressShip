@@ -13,7 +13,6 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
     public record GetAllShipmentsQuery : IQuery<IEnumerable<ShipmentDTO>>
     {
         public string? Status { get; set; }
-        public Guid? ClientId { get; set; }
         public string? OriginCountry {  get; set; }
         public string? OriginCity { get; set; }
 

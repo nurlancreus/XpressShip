@@ -17,12 +17,14 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetByTrackingNumber
 {
     public class GetShipmentByTrackingNumberHandler : IQueryHandler<GetShipmentByTrackingNumberQuery, ShipmentDTO>
     {
-        private readonly IApiClientSessionService _clientSessionService;
+        private readonly IApiClientSession _apiClientSession;
+        private readonly IJwtSession _jwtSession;
         private readonly IShipmentRepository _shipmentRepository;
 
-        public GetShipmentByTrackingNumberHandler(IApiClientSessionService clientSessionService, IShipmentRepository shipmentRepository)
+        public GetShipmentByTrackingNumberHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, IShipmentRepository shipmentRepository)
         {
-            _clientSessionService = clientSessionService;
+            _apiClientSession = apiClientSession;
+            _jwtSession = jwtSession;
             _shipmentRepository = shipmentRepository;
         }
 
@@ -34,6 +36,8 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetByTrackingNumber
                                 .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
+                                .Include(s => s.Sender)
+                                    .ThenInclude(s => s!.Address)
                                 .AsNoTracking()
                                 .FirstOrDefaultAsync(s => s.TrackingNumber == request.TrackingNumber, cancellationToken);
 
@@ -41,14 +45,24 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetByTrackingNumber
 
             if (shipment.ApiClient is not null)
             {
-                var keysResult = _clientSessionService.GetClientApiAndSecretKey();
+                var keysResult = _apiClientSession.GetClientApiAndSecretKey();
 
-                if (keysResult.IsSuccess)
+                if (!keysResult.IsSuccess) return Result<ShipmentDTO>.Failure(keysResult.Error);
+
+                if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
                 {
-                    if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
-                    {
-                        Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
-                    }
+                    Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
+                }
+            }
+            else if (shipment.Sender is not null)
+            {
+                var senderIdResult = _jwtSession.GetUserId();
+
+                if (!senderIdResult.IsSuccess) return Result<ShipmentDTO>.Failure(senderIdResult.Error);
+
+                if (shipment.Sender.Id != senderIdResult.Value)
+                {
+                    return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
                 }
             }
 

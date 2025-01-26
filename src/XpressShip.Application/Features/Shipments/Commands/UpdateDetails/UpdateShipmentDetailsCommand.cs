@@ -20,6 +20,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
         public AddressCommandDTO? Origin { get; set; }
         public AddressCommandDTO? Destination { get; set; } 
         public string? Note { get; set; } 
-        public Guid? ShipmentRateId { get; set; } 
+        public Guid? ShipmentRateId { get; set; }
     }
 }

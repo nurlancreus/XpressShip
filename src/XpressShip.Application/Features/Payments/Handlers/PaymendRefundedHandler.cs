@@ -13,6 +13,7 @@ using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Application.Abstractions.Services.Mail;
 using XpressShip.Application.Abstractions.Services.Mail.Template;
+using XpressShip.Domain.Entities;
 
 namespace XpressShip.Application.Features.Payments.Handlers
 {
@@ -38,6 +39,8 @@ namespace XpressShip.Application.Features.Payments.Handlers
             var payment = await _paymentRepository.Table
                                     .Include(p => p.Shipment)
                                         .ThenInclude(s => s.ApiClient)
+                                    .Include(p => p.Shipment)
+                                        .ThenInclude(s => s.Sender)
                                     .FirstOrDefaultAsync(p => p.TransactionId == notification.TransactionId, cancellationToken);
 
             if (payment is null) throw new Exception("Payment is null");
@@ -46,19 +49,21 @@ namespace XpressShip.Application.Features.Payments.Handlers
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            InitiatorType? userType = payment.Shipment.ApiClient is not null ? InitiatorType.ApiClient : payment.Shipment.Sender is not null ? InitiatorType.Account : null;
+
+            var (initiatorType, initiatorId) = payment.Shipment.GetInitiatorTypeAndId();
+
             var recipientDetails = new RecipientDetailsDTO
             {
-                Email = payment.Shipment.ApiClient!.Email,
-                Name = payment.Shipment.ApiClient.CompanyName,
+                Email = (payment.Shipment.ApiClient?.Email ?? payment.Shipment.Sender?.Email)!,
+                Name = (payment.Shipment.ApiClient?.CompanyName ?? payment.Shipment.Sender?.UserName)!,
             };
 
             var body = _paymentMailTemplatesService.GeneratePaymentRefundedEmail(payment.TransactionId, recipientDetails.Name, payment.Shipment.Cost, payment.Currency.ToString(), DateTime.UtcNow);
 
             await _emailService.SendEmailAsync(recipientDetails, "Payment Refunded", body);
 
-            var identifier = payment.Shipment.ApiClient?.ApiKey; // if null then take from sender
-
-            await _paymentHubService.PaymentRefundedMessageAsync(identifier!, $"Payment with transaction ID {payment.TransactionId} is refunded successfully!", UserType.ApiClient, cancellationToken);
+            await _paymentHubService.PaymentRefundedMessageAsync(initiatorId, $"Payment with transaction ID {payment.TransactionId} is refunded successfully!", initiatorType, cancellationToken);
         }
     }
 }

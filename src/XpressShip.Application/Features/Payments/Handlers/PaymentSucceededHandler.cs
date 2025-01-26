@@ -38,6 +38,8 @@ namespace XpressShip.Application.Features.Payments.Handlers
             var payment = await _paymentRepository.Table
                                     .Include(p => p.Shipment)
                                         .ThenInclude(s => s.ApiClient)
+                                    .Include(p => p.Shipment)
+                                        .ThenInclude(s => s.Sender)
                                     .FirstOrDefaultAsync(p => p.TransactionId == notification.TransactionId, cancellationToken);
 
             if (payment is null) throw new Exception("Payment is null");
@@ -48,19 +50,19 @@ namespace XpressShip.Application.Features.Payments.Handlers
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var (initiatorType, initiatorId) = payment.Shipment.GetInitiatorTypeAndId();
+
             var recipientDetails = new RecipientDetailsDTO
             {
-                Email = payment.Shipment.ApiClient!.Email,
-                Name = payment.Shipment.ApiClient.CompanyName,
+                Email = (payment.Shipment.ApiClient?.Email ?? payment.Shipment.Sender?.Email)!,
+                Name = (payment.Shipment.ApiClient?.CompanyName ?? payment.Shipment.Sender?.UserName)!,
             };
 
             var body = _paymentMailTemplatesService.GeneratePaymentConfirmationEmail(payment.TransactionId, recipientDetails.Name, payment.Shipment.Cost, payment.Currency.ToString(), DateTime.UtcNow);
 
             await _emailService.SendEmailAsync(recipientDetails, "Payment Succeeded", body);
 
-            var identifier = payment.Shipment.ApiClient?.ApiKey; // if null then take from sender
-
-            await _paymentHubService.PaymentSucceededMessageAsync(identifier!, $"Payment with transaction ID {payment.TransactionId} is completed successfully!", UserType.ApiClient, cancellationToken);
+            await _paymentHubService.PaymentSucceededMessageAsync(initiatorId, $"Payment with transaction ID {payment.TransactionId} is completed successfully!", initiatorType, cancellationToken);
         }
     }
 }

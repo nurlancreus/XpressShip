@@ -21,6 +21,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create
         public AddressCommandDTO? Origin { get; set; }
         public AddressCommandDTO Destination { get; set; } = null!;
         public string? Note { get; set; } 
-        public Guid ShipmentRateId { get; set; } 
+        public Guid ShipmentRateId { get; set; }
+        public string InitiatorRole { get; set; } = string.Empty;
     }
 }

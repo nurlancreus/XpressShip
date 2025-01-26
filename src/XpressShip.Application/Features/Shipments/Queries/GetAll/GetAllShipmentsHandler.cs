@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
@@ -20,15 +21,18 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
     public class GetAllShipmentsHandler : IQueryHandler<GetAllShipmentsQuery, IEnumerable<ShipmentDTO>>
     {
         private readonly IShipmentRepository _shipmentRepository;
-        private readonly bool IsAdmin = true;
-        public GetAllShipmentsHandler(IShipmentRepository shipmentRepository)
+        private readonly IJwtSession _jwtSession;
+        public GetAllShipmentsHandler(IShipmentRepository shipmentRepository, IJwtSession jwtSession)
         {
             _shipmentRepository = shipmentRepository;
+            _jwtSession = jwtSession;
         }
 
         public async Task<Result<IEnumerable<ShipmentDTO>>> Handle(GetAllShipmentsQuery request, CancellationToken cancellationToken)
         {
-            if (!IsAdmin) return Result<IEnumerable<ShipmentDTO>>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
+            var isAdminResult = _jwtSession.IsAdminAuth();
+
+            if (!isAdminResult.IsSuccess) return Result<IEnumerable<ShipmentDTO>>.Failure(isAdminResult.Error);
 
             var shipments = _shipmentRepository.Table
                 .Include(s => s.Rate)
@@ -42,6 +46,10 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
                     .ThenInclude(c => c!.Address)
                         .ThenInclude(a => a.City)
                             .ThenInclude(c => c.Country)
+                .Include(s => s.Sender)
+                    .ThenInclude(s => s!.Address)
+                        .ThenInclude(a => a.City)
+                            .ThenInclude(c => c.Country)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -52,26 +60,23 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
                 shipments = shipments.Where(s => s.Status == shipmentStatus);
             }
 
-            // Filter by Client ID
-            if (request.ClientId.HasValue)
-            {
-                shipments = shipments.Where(s => s.ApiClientId == request.ClientId);
-            }
-
             // Filter by Origin Location
-            if (request.OriginCountry is string originCountry)
+            if (!string.IsNullOrEmpty(request.OriginCountry))
             {
-                var origins = shipments.Select(s => new { country = (s.OriginAddress ?? s.ApiClient!.Address).City.Country.Name, city = (s.OriginAddress ?? s.ApiClient!.Address).City.Name });
+                shipments = shipments.Where(s =>
+                    (s.OriginAddress != null && s.OriginAddress.City.Country.Name == request.OriginCountry) ||
+                    (s.ApiClient != null && s.ApiClient.Address.City.Country.Name == request.OriginCountry) ||
+                    (s.Sender != null && s.Sender.Address.City.Country.Name == request.OriginCountry));
 
-                if (request.OriginCity is string originCity)
+                if (!string.IsNullOrEmpty(request.OriginCity))
                 {
-                    shipments = shipments.Where(s => origins.Select(o => o.city).Contains(originCity));
-                }
-                else
-                {
-                    shipments = shipments.Where(s => origins.Select(o => o.country).Contains(originCountry));
+                    shipments = shipments.Where(s =>
+                        (s.OriginAddress != null && s.OriginAddress.City.Name == request.OriginCity) ||
+                        (s.ApiClient != null && s.ApiClient.Address.City.Name == request.OriginCity) ||
+                        (s.Sender != null && s.Sender.Address.City.Name == request.OriginCity));
                 }
             }
+
 
             // Filter by Destination Location
             if (request.DestinationCountry is string destinationCountry)

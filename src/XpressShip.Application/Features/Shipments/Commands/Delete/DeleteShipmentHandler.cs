@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
+using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Exceptions;
@@ -16,13 +17,15 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
 {
     public class DeleteShipmentHandler : ICommandHandler<DeleteShipmentCommand>
     {
-        private readonly IApiClientSessionService _clientSessionService;
+        private readonly IApiClientSession _apiClientSession;
+        private readonly IJwtSession _jwtSession;
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteShipmentHandler(IApiClientSessionService clientSessionService, IShipmentRepository shipmentRepository, IUnitOfWork unitOfWork)
+        public DeleteShipmentHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, IShipmentRepository shipmentRepository, IUnitOfWork unitOfWork)
         {
-            _clientSessionService = clientSessionService;
+            _apiClientSession = apiClientSession;
+            _jwtSession = jwtSession;
             _shipmentRepository = shipmentRepository;
             _unitOfWork = unitOfWork;
         }
@@ -30,19 +33,15 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
         public async Task<Result<Unit>> Handle(DeleteShipmentCommand request, CancellationToken cancellationToken)
         {
             var shipment = await _shipmentRepository.Table
-                                .Include(s => s.Rate)
-                                    .ThenInclude(r => r.Shipments)
-                                .Include(s => s.OriginAddress)
-                                .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
-                                    .ThenInclude(c => c!.Address)
+                                .Include(s => s.Sender)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
             if (shipment is null) return Result<Unit>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (shipment.ApiClient is not null)
             {
-                var keysResult = _clientSessionService.GetClientApiAndSecretKey();
+                var keysResult = _apiClientSession.GetClientApiAndSecretKey();
 
                 if (keysResult.IsSuccess)
                 {
@@ -52,6 +51,18 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
                     }
                 }
             }
+            else if (shipment.Sender is not null)
+            {
+                var senderIdResult = _jwtSession.GetUserId();
+
+                if (!senderIdResult.IsSuccess) return Result<Unit>.Failure(senderIdResult.Error);
+
+                if (shipment.Sender.Id != senderIdResult.Value)
+                {
+                    return Result<Unit>.Failure(Error.UnauthorizedError("You are not authorized to delete this shipment"));
+                }
+            }
+            else return Result<Unit>.Failure(Error.UnexpectedError("Shipment initiator is not found"));
 
             _shipmentRepository.Delete(shipment);
 

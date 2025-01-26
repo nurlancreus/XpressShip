@@ -15,7 +15,7 @@ namespace XpressShip.Application.Features.Auth.Sender.Register
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
-        public AddressDTO Address { get; set; } = null!;
+        public AddressCommandDTO Address { get; set; } = null!;
         public string Password { get; set; } = string.Empty;
         public string ConfirmPassword { get; set; } = string.Empty;
     }

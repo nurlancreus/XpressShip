@@ -24,7 +24,8 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
     public class UpdateShipmentDetailsHandler : ICommandHandler<UpdateShipmentDetailsCommand, ShipmentDTO>
     {
-        private readonly IApiClientSessionService _clientSessionService;
+        private readonly IApiClientSession _apiClientSession;
+        private readonly IJwtSession _jwtSession;
         private readonly IAddressValidationService _addressValidationService;
         private readonly ICountryRepository _countryRepository;
         private readonly IShipmentRepository _shipmentRepository;
@@ -32,9 +33,10 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateShipmentDetailsHandler(IApiClientSessionService clientSessionService, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateShipmentDetailsHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
         {
-            _clientSessionService = clientSessionService;
+            _apiClientSession = apiClientSession;
+            _jwtSession = jwtSession;
             _addressValidationService = addressValidationService;
             _countryRepository = countryRepository;
             _shipmentRepository = shipmentRepository;
@@ -51,22 +53,35 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                                 .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
+                                .Include(s => s.Sender)
+                                    .ThenInclude(s => s!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
             if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
 
             if (shipment.ApiClient is not null)
             {
-                var keysResult = _clientSessionService.GetClientApiAndSecretKey();
+                var keysResult = _apiClientSession.GetClientApiAndSecretKey();
 
-                if (keysResult.IsSuccess)
+                if (!keysResult.IsSuccess) return Result<ShipmentDTO>.Failure(keysResult.Error);
+
+                if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
                 {
-                    if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
-                    {
-                        return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
-                    }
+                    return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
                 }
             }
+            else if (shipment.Sender is not null)
+            {
+                var senderIdResult = _jwtSession.GetUserId();
+
+                if (!senderIdResult.IsSuccess) return Result<ShipmentDTO>.Failure(senderIdResult.Error);
+
+                if (shipment.Sender.Id != senderIdResult.Value)
+                {
+                    return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
+                }
+            }
+            else return Result<ShipmentDTO>.Failure(Error.UnexpectedError("Shipment initiator is not found"));
 
             // Validate shipment rate
             var shipmentRate = shipment.Rate;
@@ -84,7 +99,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             if (request.Origin is AddressCommandDTO originAddress)
             {
                 // Validate Origin Address
-               var originAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(originAddress.Country, originAddress.City, originAddress.PostalCode, cancellationToken);
+                var originAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(originAddress.Country, originAddress.City, originAddress.PostalCode, cancellationToken);
 
                 if (!originAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(originAddressValidationResult.Error);
 
@@ -111,7 +126,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             if (request.Destination is AddressCommandDTO destinationAddress)
             {
                 // Validate Destination Address
-               var destAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(destinationAddress.Country, destinationAddress.City, destinationAddress.PostalCode, cancellationToken);
+                var destAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(destinationAddress.Country, destinationAddress.City, destinationAddress.PostalCode, cancellationToken);
 
                 if (!destAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(destAddressValidationResult.Error);
 

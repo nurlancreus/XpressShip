@@ -17,10 +17,10 @@ namespace XpressShip.Application.Features.ApiClients.Queries.Get
 {
     public class GetApiClientByIdHandler : IQueryHandler<GetApiClientByIdQuery, ApiClientDTO>
     {
-        private readonly IApiClientSessionService _apiClientSessionService;
+        private readonly IApiClientSession _apiClientSessionService;
         private readonly IApiClientRepository _apiClientRepository;
         private readonly bool IsAdmin = true;
-        public GetApiClientByIdHandler(IApiClientSessionService apiClientSessionService, IApiClientRepository apiClientRepository)
+        public GetApiClientByIdHandler(IApiClientSession apiClientSessionService, IApiClientRepository apiClientRepository)
         {
             _apiClientSessionService = apiClientSessionService;
             _apiClientRepository = apiClientRepository;

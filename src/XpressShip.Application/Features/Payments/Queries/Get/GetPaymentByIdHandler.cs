@@ -15,11 +15,11 @@ namespace XpressShip.Application.Features.Payments.Queries.Get
 {
     public class GetPaymentByIdHandler : IRequestHandler<GetPaymentByIdQuery, ResponseWithData<PaymentDTO>>
     {
-        private readonly IApiClientSessionService _apiClientSessionService;
+        private readonly IApiClientSession _apiClientSessionService;
         private readonly IPaymentRepository _paymentRepository;
         private readonly bool IsAdmin = true;
 
-        public GetPaymentByIdHandler(IApiClientSessionService apiClientSessionService, IPaymentRepository paymentRepository)
+        public GetPaymentByIdHandler(IApiClientSession apiClientSessionService, IPaymentRepository paymentRepository)
         {
             _apiClientSessionService = apiClientSessionService;
             _paymentRepository = paymentRepository;
