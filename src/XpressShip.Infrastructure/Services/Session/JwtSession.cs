@@ -23,9 +23,6 @@ namespace XpressShip.Infrastructure.Services.Session
 
         public Result<IEnumerable<string>> GetRoles()
         {
-            if (_claimsPrincipal == null)
-                return Result<IEnumerable<string>>.Failure(Error.UnauthorizedError("User is not authorized"));
-
             var isUserAuthResult = IsUserAuth();
 
             if (!isUserAuthResult.IsSuccess) return Result<IEnumerable<string>>.Failure(isUserAuthResult.Error);
@@ -34,7 +31,7 @@ namespace XpressShip.Infrastructure.Services.Session
 
             if (!isUserActiveResult.IsSuccess) return Result<IEnumerable<string>>.Failure(isUserActiveResult.Error);
 
-            var roleNames = _claimsPrincipal.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+            var roleNames = _claimsPrincipal!.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
             return Result<IEnumerable<string>>.Success(roleNames);
         }
@@ -89,8 +86,6 @@ namespace XpressShip.Infrastructure.Services.Session
 
         private Result<string> GetClaim(AppClaimType claimType)
         {
-            if (_claimsPrincipal == null)
-                return Result<string>.Failure(Error.UnauthorizedError("User is not authorized"));
 
             if (!IsUserAuth().IsSuccess)
                 return Result<string>.Failure(Error.UnauthorizedError("User is not authorized"));
@@ -100,22 +95,22 @@ namespace XpressShip.Infrastructure.Services.Session
             switch (claimType)
             {
                 case AppClaimType.Id:
-                    claimValue = _claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+                    claimValue = _claimsPrincipal!.FindFirstValue(ClaimTypes.NameIdentifier);
                     errorMessage = "Id claim is missing in the claim";
                     break;
 
                 case AppClaimType.Email:
-                    claimValue = _claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+                    claimValue = _claimsPrincipal!.FindFirstValue(ClaimTypes.Email);
                     errorMessage = "Email claim is missing in the claim";
                     break;
 
                 case AppClaimType.UserName:
-                    claimValue = _claimsPrincipal.FindFirstValue(ClaimTypes.Name);
+                    claimValue = _claimsPrincipal!.FindFirstValue(ClaimTypes.Name);
                     errorMessage = "Name claim is missing in the claim";
                     break;
 
                 case AppClaimType.IsActive:
-                    claimValue = _claimsPrincipal.FindFirstValue("IsActive");
+                    claimValue = _claimsPrincipal!.FindFirstValue("IsActive");
                     errorMessage = "IsActive claim is missing in the claim";
                     break;
 

@@ -20,7 +20,7 @@ namespace XpressShip.Infrastructure.Services.Session
         {
             if (_headers != null && _headers.TryGetValue("X-Api-Key", out var apiKeyValues) && apiKeyValues.FirstOrDefault() is string apiKey) return Result<string>.Success(apiKey);
 
-            return Result<string>.Failure(Error.ValidationError("API Key is missing."));
+            return Result<string>.Failure(Error.BadRequestError("API Key is missing."));
         }
 
         public Result<(string apiKey, string secretKey)> GetClientApiAndSecretKey()
@@ -29,14 +29,14 @@ namespace XpressShip.Infrastructure.Services.Session
                 
                 return Result<(string apiKey, string secretKey)>.Success((apiKey, secretKey));
 
-            return Result<(string apiKey, string secretKey)>.Failure(Error.ValidationError("API Key or Secret Key is missing."));
+            return Result<(string apiKey, string secretKey)>.Failure(Error.BadRequestError("API Key or Secret Key is missing."));
         }
 
         public Result<string> GetSecretKey()
         {
             if (_headers != null && _headers.TryGetValue("X-Secret-Key", out var secretKeyValues) && secretKeyValues.FirstOrDefault() is string secretKey) return Result<string>.Success(secretKey);
 
-            return Result<string>.Failure(Error.ValidationError("Secret Key is missing."));
+            return Result<string>.Failure(Error.BadRequestError("Secret Key is missing."));
         }
     }
 }
