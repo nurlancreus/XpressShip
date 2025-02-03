@@ -13,6 +13,7 @@ using XpressShip.Application.Abstractions.Services.Mail.Template;
 using XpressShip.Application.DTOs.Mail;
 using XpressShip.Application.Notifications.Payment;
 using XpressShip.Domain.Enums;
+using XpressShip.Domain.Exceptions;
 
 namespace XpressShip.Application.Features.Payments.Handlers
 {
@@ -41,18 +42,19 @@ namespace XpressShip.Application.Features.Payments.Handlers
                                         .ThenInclude(s => s.Sender)
                                     .FirstOrDefaultAsync(p => p.TransactionId == notification.TransactionId, cancellationToken);
 
-            if (payment is null) throw new Exception("Payment is null");
+            if (payment is null) throw new XpressShipException("Payment is not found");
 
             payment.MakeFailed();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var (initiatorType, initiatorId) = payment.Shipment.GetInitiatorTypeAndId();
+            var (name, email) = payment.Shipment.GetRecipient();
 
             var recipientDetails = new RecipientDetailsDTO
             {
-                Email = (payment.Shipment.ApiClient?.Email ?? payment.Shipment.Sender?.Email)!,
-                Name = (payment.Shipment.ApiClient?.CompanyName ?? payment.Shipment.Sender?.UserName)!,
+                Email = email,
+                Name = name,
             };
 
             var body = _paymentMailTemplatesService.GeneratePaymentFailedEmail(payment.TransactionId, recipientDetails.Name);

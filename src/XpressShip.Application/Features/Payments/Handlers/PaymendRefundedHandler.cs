@@ -14,6 +14,7 @@ using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Application.Abstractions.Services.Mail;
 using XpressShip.Application.Abstractions.Services.Mail.Template;
 using XpressShip.Domain.Entities;
+using XpressShip.Domain.Exceptions;
 
 namespace XpressShip.Application.Features.Payments.Handlers
 {
@@ -43,20 +44,19 @@ namespace XpressShip.Application.Features.Payments.Handlers
                                         .ThenInclude(s => s.Sender)
                                     .FirstOrDefaultAsync(p => p.TransactionId == notification.TransactionId, cancellationToken);
 
-            if (payment is null) throw new Exception("Payment is null");
+            if (payment is null) throw new XpressShipException("Payment is not found");
 
             payment.MakeRefunded();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            InitiatorType? userType = payment.Shipment.ApiClient is not null ? InitiatorType.ApiClient : payment.Shipment.Sender is not null ? InitiatorType.Account : null;
-
             var (initiatorType, initiatorId) = payment.Shipment.GetInitiatorTypeAndId();
+            var (name, email) = payment.Shipment.GetRecipient();
 
             var recipientDetails = new RecipientDetailsDTO
             {
-                Email = (payment.Shipment.ApiClient?.Email ?? payment.Shipment.Sender?.Email)!,
-                Name = (payment.Shipment.ApiClient?.CompanyName ?? payment.Shipment.Sender?.UserName)!,
+                Email = email,
+                Name = name,
             };
 
             var body = _paymentMailTemplatesService.GeneratePaymentRefundedEmail(payment.TransactionId, recipientDetails.Name, payment.Shipment.Cost, payment.Currency.ToString(), DateTime.UtcNow);

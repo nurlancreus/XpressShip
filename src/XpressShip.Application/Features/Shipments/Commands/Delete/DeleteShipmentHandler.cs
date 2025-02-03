@@ -37,7 +37,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
                                 .Include(s => s.Sender)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) return Result<Unit>.Failure(Error.NotFoundError(nameof(shipment)));
+            if (shipment is null) return Result<Unit>.Failure(Error.NotFoundError("Shipment is not found"));
 
             if (shipment.ApiClient is not null)
             {
@@ -55,7 +55,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Delete
             {
                 var senderIdResult = _jwtSession.GetUserId();
 
-                if (!senderIdResult.IsSuccess) return Result<Unit>.Failure(senderIdResult.Error);
+                if (senderIdResult.IsFailure) return Result<Unit>.Failure(senderIdResult.Error);
 
                 if (shipment.Sender.Id != senderIdResult.Value)
                 {

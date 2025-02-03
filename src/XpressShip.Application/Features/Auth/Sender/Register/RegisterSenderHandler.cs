@@ -23,15 +23,13 @@ namespace XpressShip.Application.Features.Auth.Sender.Register
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICountryRepository _countryRepository;
-        private readonly IAddressValidationService _addressValidationService;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IAdminHubService _adminHubService;
 
-        public RegisterSenderHandler(UserManager<ApplicationUser> userManager, ICountryRepository countryRepository, IAddressValidationService addressValidationService, IGeoInfoService geoInfoService, IAdminHubService adminHubService)
+        public RegisterSenderHandler(UserManager<ApplicationUser> userManager, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IAdminHubService adminHubService)
         {
             _userManager = userManager;
             _countryRepository = countryRepository;
-            _addressValidationService = addressValidationService;
             _geoInfoService = geoInfoService;
             _adminHubService = adminHubService;
         }
@@ -39,10 +37,6 @@ namespace XpressShip.Application.Features.Auth.Sender.Register
         public async Task<Result<Unit>> Handle(RegisterSenderCommand request, CancellationToken cancellationToken)
         {
             if (request.Password != request.ConfirmPassword) return Result<Unit>.Failure(Error.BadRequestError("Passwords do not match."));
-
-            var isLocationValidResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode, cancellationToken);
-
-            if (!isLocationValidResult.IsSuccess) return Result<Unit>.Failure(isLocationValidResult.Error);
 
             var country = await _countryRepository.Table.Include(c => c.Cities).FirstOrDefaultAsync(c => c.Name == request.Address.Country, cancellationToken);
 

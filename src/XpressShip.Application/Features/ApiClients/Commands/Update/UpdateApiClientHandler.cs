@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Application.Responses;
@@ -20,16 +21,16 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
 {
     public class UpdateApiClientHandler : ICommandHandler<UpdateApiClientCommand, ApiClientDTO>
     {
+        private readonly IApiClientSession _apiClientSession;
         private readonly IApiClientRepository _apiClientRepository;
-        private readonly IAddressValidationService _addressValidationService;
         private readonly ICountryRepository _countryRepository;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateApiClientHandler(IApiClientRepository apiClientRepository, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateApiClientHandler(IApiClientSession apiClientSession, IApiClientRepository apiClientRepository, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
         {
+            _apiClientSession = apiClientSession;
             _apiClientRepository = apiClientRepository;
-            _addressValidationService = addressValidationService;
             _countryRepository = countryRepository;
             _geoInfoService = geoInfoService;
             _unitOfWork = unitOfWork;
@@ -41,7 +42,13 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
                                            .Include(client => client.Address)
                                            .FirstOrDefaultAsync(client => client.Id == request.Id, cancellationToken);
 
-            if (apiClient is null) return Result<ApiClientDTO>.Failure(Error.NotFoundError(nameof(apiClient)));
+            if (apiClient is null) return Result<ApiClientDTO>.Failure(Error.NotFoundError("Client is not found"));
+
+            var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+
+            if (keysResult.IsFailure) return Result<ApiClientDTO>.Failure(keysResult.Error);
+
+            if (apiClient.SecretKey != keysResult.Value.secretKey || apiClient.ApiKey != keysResult.Value.apiKey) return Result<ApiClientDTO>.Failure(Error.UnauthorizedError("You are not authorized to update the client"));
 
             if (request.CompanyName is string companyName && companyName != apiClient.CompanyName)
             {
@@ -59,10 +66,6 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
 
             if (request.Address is not null)
             {
-               var addressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(request.Address.Country, request.Address.City, request.Address.PostalCode,  cancellationToken);
-
-                if (!addressValidationResult.IsSuccess) return Result<ApiClientDTO>.Failure(addressValidationResult.Error);
-
                 var geoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Address.Country, request.Address.City, cancellationToken);
 
                 if (!geoInfoResult.IsSuccess) return Result<ApiClientDTO>.Failure(geoInfoResult.Error);

@@ -15,6 +15,7 @@ using XpressShip.Application.Abstractions.Services.Payment;
 using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Domain.Entities;
+using XpressShip.Domain.Entities.Users;
 
 namespace XpressShip.Application.Features.Payments.Command.Capture
 {
@@ -25,30 +26,40 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
 
+        public CapturePaymentHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, IPaymentRepository paymentRepository, IPaymentService paymentService)
+        {
+            _apiClientSession = apiClientSession;
+            _jwtSession = jwtSession;
+            _paymentRepository = paymentRepository;
+            _paymentService = paymentService;
+        }
+
         public async Task<Result<string>> Handle(CapturePaymentCommand request, CancellationToken cancellationToken)
         {
             var payment = await _paymentRepository.Table
                      .Include(p => p.Shipment)
                          .ThenInclude(s => s.ApiClient)
+                     .Include(p => p.Shipment)
+                         .ThenInclude(s => s.Sender)
                      .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
-            if (payment is null) return Result<string>.Failure(Error.NotFoundError(nameof(payment)));
+            if (payment is null) return Result<string>.Failure(Error.NotFoundError("Payment is not found"));
 
             if (payment.Shipment.ApiClient is ApiClient apiClient)
             {
                 var keysResult = _apiClientSession.GetClientApiAndSecretKey();
 
-                if (!keysResult.IsSuccess) return Result<string>.Failure(keysResult.Error);
+                if (keysResult.IsFailure) return Result<string>.Failure(keysResult.Error);
 
                 if (apiClient.ApiKey != keysResult.Value.apiKey || apiClient.SecretKey != keysResult.Value.secretKey) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
             }
-            else if (payment.Shipment.SenderId is string senderId)
+            else if (payment.Shipment.Sender is Sender sender)
             {
                 var userIdResult = _jwtSession.GetUserId();
 
-                if (!userIdResult.IsSuccess) return Result<string>.Failure(userIdResult.Error);
+                if (userIdResult.IsFailure) return Result<string>.Failure(userIdResult.Error);
 
-                if (senderId != userIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
+                if (sender.Id != userIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
             }
 
             if (payment.TransactionId != request.TransactionId) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));

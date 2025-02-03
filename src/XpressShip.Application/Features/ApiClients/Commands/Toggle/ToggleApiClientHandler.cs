@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -14,11 +15,13 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Toggle
 {
     public class ToggleApiClientHandler : ICommandHandler<ToggleApiClientCommand>
     {
+        private readonly IApiClientSession _apiClientSession;
         private readonly IApiClientRepository _apiClientRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ToggleApiClientHandler(IApiClientRepository apiClientRepository, IUnitOfWork unitOfWork)
+        public ToggleApiClientHandler(IApiClientSession apiClientSession, IApiClientRepository apiClientRepository, IUnitOfWork unitOfWork)
         {
+            _apiClientSession = apiClientSession;
             _apiClientRepository = apiClientRepository;
             _unitOfWork = unitOfWork;
         }
@@ -27,7 +30,13 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Toggle
         {
             ApiClient? apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
-            if (apiClient is null) return Result<Unit>.Failure(Error.NotFoundError(nameof(apiClient)));
+            if (apiClient is null) return Result<Unit>.Failure(Error.NotFoundError("Client is not found"));
+
+            var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+
+            if (keysResult.IsFailure) return Result<Unit>.Failure(keysResult.Error);
+
+            if (apiClient.SecretKey != keysResult.Value.secretKey || apiClient.ApiKey != keysResult.Value.apiKey) return Result<Unit>.Failure(Error.UnauthorizedError("You are not authorized to toggle the client"));
 
             apiClient.Toggle();
 

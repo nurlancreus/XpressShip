@@ -42,13 +42,18 @@ namespace XpressShip.Application.Features.Payments.Command.Create
                                 .Include(s => s.DestinationAddress)
                                     .ThenInclude(a => a.City)
                                         .ThenInclude(c => c.Country)
+                                .Include(s => s.OriginAddress)
+                                    .ThenInclude(a => a!.City)
+                                        .ThenInclude(c => c.Country)
                                 .Include(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
+                                        .ThenInclude(a => a.City)
+                                            .ThenInclude(c => c.Country)
                                 .Include(s => s.Payment)
                                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken);
 
 
-            if (shipment is null) return Result<PaymentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
+            if (shipment is null) return Result<PaymentDTO>.Failure(Error.NotFoundError("Shipment is not found"));
 
             if (keysResult.IsSuccess)
             {
@@ -61,9 +66,9 @@ namespace XpressShip.Application.Features.Payments.Command.Create
             if (shipment.Payment?.TransactionId is not null)
              return Result<PaymentDTO>.Failure(Error.ConflictError("Payment already processed."));
             
+            if (Enum.TryParse<PaymentMethod>(request.Method, true, out var method)) return Result<PaymentDTO>.Failure(Error.BadRequestError());
 
-            var method = request.Method.EnsureEnumValueDefined<PaymentMethod>("method");
-            var currency = request.Currency.EnsureEnumValueDefined<PaymentCurrency>("currency");
+            if (Enum.TryParse<PaymentCurrency>(request.Currency, true, out var currency)) return Result<PaymentDTO>.Failure(Error.BadRequestError());
 
             shipment.Payment ??= Payment.Create(method, currency);
 

@@ -19,6 +19,7 @@ using XpressShip.Domain.Abstractions;
 using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
+using XpressShip.Domain.Entities.Users;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
@@ -26,18 +27,16 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
     {
         private readonly IApiClientSession _apiClientSession;
         private readonly IJwtSession _jwtSession;
-        private readonly IAddressValidationService _addressValidationService;
         private readonly ICountryRepository _countryRepository;
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IShipmentRateRepository _shipmentRateRepository;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateShipmentDetailsHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, IAddressValidationService addressValidationService, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateShipmentDetailsHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
         {
             _apiClientSession = apiClientSession;
             _jwtSession = jwtSession;
-            _addressValidationService = addressValidationService;
             _countryRepository = countryRepository;
             _shipmentRepository = shipmentRepository;
             _shipmentRateRepository = shipmentRateRepository;
@@ -50,33 +49,41 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
                                 .Include(s => s.OriginAddress)
+                                    .ThenInclude(a => a!.City)
+                                         .ThenInclude(c => c.Country)
                                 .Include(s => s.DestinationAddress)
+                                    .ThenInclude(a => a.City)
+                                         .ThenInclude(c => c.Country)
                                 .Include(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
+                                        .ThenInclude(a => a.City)
+                                            .ThenInclude(c => c.Country)
                                 .Include(s => s.Sender)
                                     .ThenInclude(s => s!.Address)
+                                        .ThenInclude(a => a.City)
+                                            .ThenInclude(c => c.Country)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
+            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError("Shipment is not found"));
 
-            if (shipment.ApiClient is not null)
+            if (shipment.ApiClient is ApiClient client)
             {
                 var keysResult = _apiClientSession.GetClientApiAndSecretKey();
 
-                if (!keysResult.IsSuccess) return Result<ShipmentDTO>.Failure(keysResult.Error);
+                if (keysResult.IsFailure) return Result<ShipmentDTO>.Failure(keysResult.Error);
 
-                if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
+                if (client.ApiKey != keysResult.Value.apiKey || client.SecretKey != keysResult.Value.secretKey)
                 {
                     return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
                 }
             }
-            else if (shipment.Sender is not null)
+            else if (shipment.Sender is Sender sender)
             {
                 var senderIdResult = _jwtSession.GetUserId();
 
-                if (!senderIdResult.IsSuccess) return Result<ShipmentDTO>.Failure(senderIdResult.Error);
+                if (senderIdResult.IsFailure) return Result<ShipmentDTO>.Failure(senderIdResult.Error);
 
-                if (shipment.Sender.Id != senderIdResult.Value)
+                if (sender.Id != senderIdResult.Value)
                 {
                     return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
                 }
@@ -90,7 +97,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             {
                 shipmentRate = await _shipmentRateRepository.GetByIdAsync(rateId, true, cancellationToken);
 
-                if (shipmentRate is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipmentRate)));
+                if (shipmentRate is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError("Rate is not found"));
 
                 shipment.Rate = shipmentRate;
             }
@@ -98,14 +105,9 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
             if (request.Origin is AddressCommandDTO originAddress)
             {
-                // Validate Origin Address
-                var originAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(originAddress.Country, originAddress.City, originAddress.PostalCode, cancellationToken);
-
-                if (!originAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(originAddressValidationResult.Error);
-
                 var originGeoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(originAddress.Country, originAddress.City, cancellationToken);
 
-                if (!originGeoInfoResult.IsSuccess) return Result<ShipmentDTO>.Failure(originGeoInfoResult.Error);
+                if (originGeoInfoResult.IsFailure) return Result<ShipmentDTO>.Failure(originGeoInfoResult.Error);
 
                 shipment.OriginAddress = Address.Create(originAddress.PostalCode, originAddress.Street, originGeoInfoResult.Value.Latitude, originGeoInfoResult.Value.Longitude);
 
@@ -125,14 +127,9 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
             if (request.Destination is AddressCommandDTO destinationAddress)
             {
-                // Validate Destination Address
-                var destAddressValidationResult = await _addressValidationService.ValidateCountryCityAndPostalCodeAsync(destinationAddress.Country, destinationAddress.City, destinationAddress.PostalCode, cancellationToken);
-
-                if (!destAddressValidationResult.IsSuccess) return Result<ShipmentDTO>.Failure(destAddressValidationResult.Error);
-
                 var destinationGeoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(destinationAddress.Country, destinationAddress.City, cancellationToken);
 
-                if (!destinationGeoInfoResult.IsSuccess) return Result<ShipmentDTO>.Failure(destinationGeoInfoResult.Error);
+                if (destinationGeoInfoResult.IsFailure) return Result<ShipmentDTO>.Failure(destinationGeoInfoResult.Error);
 
                 shipment.DestinationAddress = Address.Create(destinationAddress.PostalCode, destinationAddress.Street, destinationGeoInfoResult.Value.Latitude, destinationGeoInfoResult.Value.Longitude);
 

@@ -8,6 +8,7 @@ using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.Payments.DTOs;
 using XpressShip.Application.Features.Rates.DTOs;
+using XpressShip.Application.Features.User.DTOs;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 
@@ -25,6 +26,7 @@ namespace XpressShip.Application.Features.Shipments.DTOs
         public AddressDTO? OriginAddress { get; set; }
         public AddressDTO? DestinationAddress { get; set; }
         public ApiClientDTO? ApiClient { get; set; }
+        public SenderDTO? Sender { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public ShipmentDTO() { }
@@ -36,9 +38,10 @@ namespace XpressShip.Application.Features.Shipments.DTOs
             Rate = shipment.Rate is not null ? new ShipmentRateDTO(shipment.Rate) : null;
             Cost = shipment.Cost;
             EstimatedDate = shipment.EstimatedDate;
-            OriginAddress = shipment.OriginAddress is not null ? new AddressDTO(shipment.OriginAddress) : ApiClient?.Address;
+            OriginAddress = shipment.OriginAddress is not null ? new AddressDTO(shipment.OriginAddress) : ApiClient?.Address ?? Sender?.Address;
             DestinationAddress = shipment.DestinationAddress is not null ? new AddressDTO(shipment.DestinationAddress) : null;
             ApiClient = shipment.ApiClient is not null ? new ApiClientDTO(shipment.ApiClient) : null;
+            Sender = shipment.Sender is not null ? new SenderDTO(shipment.Sender) : null;
             Payment = shipment.Payment is not null ? new PaymentDTO(shipment.Payment) : null;
             CreatedAt = shipment.CreatedAt;
         }

@@ -29,7 +29,7 @@ namespace XpressShip.Application.Features.Auth.Admin.Login
         {
             var admin = await _userManager.FindByNameAsync(request.UserName);
 
-            if (admin is null) return Result<TokenDTO>.Failure(Error.NotFoundError(nameof(admin)));
+            if (admin is null) return Result<TokenDTO>.Failure(Error.LoginError());
 
             var signInResult = await _signInManager.PasswordSignInAsync(admin, request.Password, false, false);
 

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,5 +20,9 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetAll
         public string? DestinationCountry { get; set; }
         public string? DestinationCity { get; set; }
 
+        public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out GetAllShipmentsQuery result)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

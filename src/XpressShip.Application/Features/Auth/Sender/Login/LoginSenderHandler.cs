@@ -29,7 +29,7 @@ namespace XpressShip.Application.Features.Auth.Sender.Login
         {
             var sender = await _userManager.FindByNameAsync(request.UserName);
 
-            if (sender is null) return Result<TokenDTO>.Failure(Error.NotFoundError(nameof(sender)));
+            if (sender is null) return Result<TokenDTO>.Failure(Error.LoginError());
 
             var signInResult = await _signInManager.PasswordSignInAsync(sender, request.Password, false, false);
 

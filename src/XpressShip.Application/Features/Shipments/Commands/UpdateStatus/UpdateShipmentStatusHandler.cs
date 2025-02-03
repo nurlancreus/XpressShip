@@ -21,7 +21,7 @@ using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 {
-    public class UpdateShipmentStatusHandler : ICommandHandler<UpdateShipmentStatusCommand, ShipmentDTO>
+    public class UpdateShipmentStatusHandler : ICommandHandler<UpdateShipmentStatusCommand, string>
     {
         private readonly IShipmentRepository _shipmentRepository;
         private readonly IJwtSession _jwtSession;
@@ -46,11 +46,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<ShipmentDTO>> Handle(UpdateShipmentStatusCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(UpdateShipmentStatusCommand request, CancellationToken cancellationToken)
         {
             var isAdminResult = _jwtSession.IsAdminAuth();
 
-            if (!isAdminResult.IsSuccess) return Result<ShipmentDTO>.Failure(isAdminResult.Error);
+            if (!isAdminResult.IsSuccess) return Result<string>.Failure(isAdminResult.Error);
 
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
@@ -62,31 +62,32 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                                     .ThenInclude(s => s!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
+            if (shipment is null) return Result<string>.Failure(Error.NotFoundError("Shipment is not found"));
 
             var (initiatorType, initiatorId) = shipment.GetInitiatorTypeAndId();
 
-            if (!Enum.TryParse<ShipmentStatus>(request.Status, true, out var newStatus)) return Result<ShipmentDTO>.Failure(Error.BadRequestError("Could not parse the enum"));
+            if (!Enum.TryParse<ShipmentStatus>(request.Status, true, out var newStatus)) return Result<string>.Failure(Error.BadRequestError("Could not parse the enum"));
 
             string subject = "";
             string body = "";
-            RecipientDetailsDTO? recipientDetails = null;
+            var (name, email) = shipment.GetRecipient();
+
+            var recipientDetails = new RecipientDetailsDTO
+            {
+                Email = email,
+                Name = name,
+            };
 
             switch (newStatus)
             {
                 case ShipmentStatus.Pending:
                     shipment.MakePending();
+                    recipientDetails = null;
 
                     break;
 
                 case ShipmentStatus.Delivered:
                     shipment.MakeDelivered();
-
-                    recipientDetails = new RecipientDetailsDTO
-                    {
-                        Email = shipment.ApiClient!.Email,
-                        Name = shipment.ApiClient!.CompanyName
-                    };
 
                     body = _shipmentMailTemplatesService.GenerateShipmentDeliveredEmail(
                         shipment.TrackingNumber, recipientDetails.Name, DateTime.UtcNow);
@@ -99,11 +100,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                 case ShipmentStatus.Canceled:
                     shipment.MakeCanceled();
 
-                    recipientDetails = new RecipientDetailsDTO
-                    {
-                        Email = shipment.ApiClient!.Email,
-                        Name = shipment.ApiClient!.CompanyName
-                    };
                     body = _shipmentMailTemplatesService.GenerateShipmentCanceledEmail(
                         shipment.TrackingNumber, recipientDetails.Name);
                     subject = "Shipment Canceled";
@@ -114,11 +110,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                 case ShipmentStatus.Shipped:
                     shipment.MakeShipped();
 
-                    recipientDetails = new RecipientDetailsDTO
-                    {
-                        Email = shipment.ApiClient!.Email,
-                        Name = shipment.ApiClient!.CompanyName
-                    };
                     body = _shipmentMailTemplatesService.GenerateShipmentConfirmationEmail(
                         shipment.TrackingNumber, recipientDetails.Name, (DateTime)shipment.EstimatedDate!);
 
@@ -130,11 +121,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                 case ShipmentStatus.Failed:
                     shipment.MakeFailed();
 
-                    recipientDetails = new RecipientDetailsDTO
-                    {
-                        Email = shipment.ApiClient!.Email,
-                        Name = shipment.ApiClient!.CompanyName
-                    };
                     body = _shipmentMailTemplatesService.GenerateShipmentFailedEmail(
                         shipment.TrackingNumber, recipientDetails.Name);
 
@@ -144,7 +130,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                     break;
 
                 default:
-                    return Result<ShipmentDTO>.Failure(Error.UnexpectedError("Invalid Status"));
+                    return Result<string>.Failure(Error.UnexpectedError("Invalid Status"));
             }
 
 
@@ -153,7 +139,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
+            return Result<string>.Success(shipment.TrackingNumber);
         }
     }
 }

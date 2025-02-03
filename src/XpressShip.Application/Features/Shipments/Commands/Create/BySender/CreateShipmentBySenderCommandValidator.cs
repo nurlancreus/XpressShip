@@ -1,24 +1,16 @@
 ﻿using FluentValidation;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Features.Addresses;
-using XpressShip.Application.Features.Addresses.DTOs;
-using XpressShip.Application.Features.Shipments.Commands.Create;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Validation;
 
-namespace XpressShip.Application.Features.Shipments.Commands.Create
+namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
 {
-    public class CreateShipmentCommandValidator : AbstractValidator<CreateShipmentCommand>
+    public class CreateShipmentBySenderCommandValidator : AbstractValidator<CreateShipmentBySenderCommand>
     {
-        public CreateShipmentCommandValidator(
-            IShipmentRateRepository shipmentRateRepository,
-            IAddressValidationService addressValidationService,
-            IGeoInfoService geoInfoService)
+        public CreateShipmentBySenderCommandValidator(IShipmentRateRepository shipmentRateRepository,IAddressValidationService addressValidationService, IGeoInfoService geoInfoService)
         {
             RuleFor(x => x.Method)
                 .NotEmpty()
