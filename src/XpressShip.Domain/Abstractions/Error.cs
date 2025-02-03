@@ -10,60 +10,62 @@ namespace XpressShip.Domain.Abstractions
     public sealed record Error : IError
     {
         public readonly string Title;
-        public readonly string Type;
+        public readonly ErrorType Type;
         public readonly string Message;
         public readonly HttpStatusCode StatusCode;
+        public readonly IEnumerable<KeyValuePair<string, string>> ValidationErrorMessages;
 
-        public static readonly Error None = new(string.Empty, HttpStatusCode.OK, string.Empty);
+        public static readonly Error None = new(ErrorType.None, HttpStatusCode.OK, string.Empty);
 
-        private Error(string title, HttpStatusCode statusCode, string message)
+        private Error(ErrorType type, HttpStatusCode statusCode, string message, IEnumerable<KeyValuePair<string, string>>? validationErrors = null)
         {
-            Title = title;
-            Type = title;
+            Title = type.ToString();
+            Type = type;
             StatusCode = statusCode;
             Message = message;
+            ValidationErrorMessages = validationErrors ?? [];
         }
 
         public static Error RegisterError(string message = "You could not register. Wrong credentials")
         {
-            return new(nameof(ErrorType.Register), HttpStatusCode.BadRequest, message);
+            return new(ErrorType.Register, HttpStatusCode.BadRequest, message);
         }
         public static Error LoginError(string message = "You could not login. Wrong credentials")
         {
-            return new(nameof(ErrorType.Login), HttpStatusCode.BadRequest, message);
+            return new(ErrorType.Login, HttpStatusCode.BadRequest, message);
         }
-        public static Error NotFoundError(string model = "Entity")
+        public static Error NotFoundError(string message = "Entity is not found")
         {
-            return new(nameof(ErrorType.NotFound), HttpStatusCode.NotFound, $"{model} Not Found");
+            return new(ErrorType.NotFound, HttpStatusCode.NotFound, message);
         }
-        public static Error ValidationError(string message = "Validation error happened")
+        public static Error ValidationError(string message = "Validation error happened", IEnumerable<KeyValuePair<string, string>>? validationErrors = null)
         {
-            return new(nameof(ErrorType.Validation), HttpStatusCode.BadRequest, message);
+            return new(ErrorType.Validation, HttpStatusCode.BadRequest, message, validationErrors);
         }
 
         public static Error BadRequestError(string message = "Invalid request or parameters.")
         {
-            return new(nameof(ErrorType.BadRequest), HttpStatusCode.BadRequest, message);
+            return new(ErrorType.BadRequest, HttpStatusCode.BadRequest, message);
         }
 
         public static Error ConflictError(string message = "The data provided conflicts with existing data.")
         {
-            return new(nameof(ErrorType.Conflict), HttpStatusCode.Conflict, message);
+            return new(ErrorType.Conflict, HttpStatusCode.Conflict, message);
         }
 
         public static Error UnauthorizedError(string message = "You're unauthorized")
         {
-            return new(nameof(ErrorType.Unauthorized), HttpStatusCode.Unauthorized, message);
+            return new(ErrorType.Unauthorized, HttpStatusCode.Unauthorized, message);
         }
 
         public static Error ForbiddenError(string message = "This operation is forbidden for you")
         {
-            return new(nameof(ErrorType.Forbidden), HttpStatusCode.Forbidden, message);
+            return new(ErrorType.Forbidden, HttpStatusCode.Forbidden, message);
         }
 
         public static Error UnexpectedError(string message = "Unexpected error happened. Something went wrong")
         {
-            return new(nameof(ErrorType.Unexpected), HttpStatusCode.InternalServerError, message);
+            return new(ErrorType.Unexpected, HttpStatusCode.InternalServerError, message);
         }
     }
 }

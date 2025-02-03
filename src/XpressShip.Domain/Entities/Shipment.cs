@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using XpressShip.Domain;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities.Base;
@@ -225,6 +226,17 @@ namespace XpressShip.Domain.Entities
                 ShipmentMethod.Overnight => (int)Math.Ceiling(baseDays * Rate.OvernightDeliveryTimeMultiplier),
                 _ => baseDays
             };
+        }
+
+        public (string name, string email) GetRecipient()
+        {
+            if (ApiClient is null && Sender is null) throw new ArgumentNullException("Both Api Client and Sender cannot be null");
+            else if (ApiClient is not null && Sender is not null) throw new ArgumentException("Either Api Client or Sender should be null");
+
+            var email = (ApiClient?.Email ?? Sender?.Email)!;
+            var name = (ApiClient?.CompanyName ?? Sender?.UserName)!;
+
+            return (name, email);
         }
 
         public (InitiatorType initiatorType, string initiatorId) GetInitiatorTypeAndId()

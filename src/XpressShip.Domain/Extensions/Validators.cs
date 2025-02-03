@@ -16,7 +16,7 @@ namespace XpressShip.Domain.Extensions
     {
         #region Null and Default Checks
 
-        private static Exceptions.ValidationException Invalid(string message) => new(message);
+        private static Exceptions.XpressShipException Invalid(string message) => new(message);
 
         public static T? EnsureNull<T>(this T? model, [CallerArgumentExpression(nameof(model))] string name = "")
             => model == null ? model : throw Invalid($"{name} must be null.");

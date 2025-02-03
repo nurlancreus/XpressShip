@@ -13,7 +13,7 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = new Regex(DimensionPattern).IsMatch(dimensions);
             if (!isValid && throwException)
-                throw new ValidationException("Invalid dimensions format. Expected format: LxWxH.");
+                throw new XpressShipException("Invalid dimensions format. Expected format: LxWxH.");
 
             return isValid;
         }
@@ -22,7 +22,7 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = volume > 0 && rate.MinVolume <= volume && volume <= rate.MaxVolume;
             if (!isValid && throwException)
-                throw new ValidationException("Volume is out of the allowed range.");
+                throw new XpressShipException("Volume is out of the allowed range.");
 
             return isValid;
         }
@@ -31,7 +31,7 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = distance > 0 && rate.MinDistance <= distance && distance <= rate.MaxDistance;
             if (!isValid && throwException)
-                throw new ValidationException("Distance is out of the allowed range.");
+                throw new XpressShipException("Distance is out of the allowed range.");
 
 
             return isValid;
@@ -41,7 +41,7 @@ namespace XpressShip.Domain.Validation
         {
             bool isValid = weight > 0 && rate.MinWeight <= weight && weight <= rate.MaxWeight;
             if (!isValid && throwException)
-                throw new ValidationException("Weight is out of the allowed range.");
+                throw new XpressShipException("Weight is out of the allowed range.");
 
             return isValid;
         }
@@ -51,7 +51,7 @@ namespace XpressShip.Domain.Validation
             bool isValid = latitude is >= -90 and <= 90;
 
             if (!isValid && throwException)
-                throw new ValidationException($"Invalid latitude: {latitude}. Latitude must be between -90 and 90 degrees.");
+                throw new XpressShipException($"Invalid latitude: {latitude}. Latitude must be between -90 and 90 degrees.");
 
             return isValid;
 
@@ -63,7 +63,7 @@ namespace XpressShip.Domain.Validation
             bool isValid = longitude is >= -180 and <= 180;
 
             if (!isValid && throwException)
-                throw new ValidationException($"Invalid longitude: {longitude}. Longitude must be between -180 and 180 degrees.");
+                throw new XpressShipException($"Invalid longitude: {longitude}. Longitude must be between -180 and 180 degrees.");
 
             return isValid;
 
