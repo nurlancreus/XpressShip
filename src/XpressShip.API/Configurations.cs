@@ -133,6 +133,7 @@ namespace XpressShip.API
             {
                 config.RegisterServicesFromAssembly(typeof(ValidationPipelineBehaviour<,>).Assembly);
                 config.AddOpenBehavior(typeof(ValidationPipelineBehaviour<,>));
+                config.AddOpenBehavior(typeof(ExceptionHandlingPipelineBehavior<,>));
                 config.AddOpenBehavior(typeof(LoggingPipelineBehaviour<,>));
 
             });

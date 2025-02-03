@@ -10,6 +10,7 @@ using XpressShip.Application.Features.ApiClients.Commands.UpdateSecretKey;
 using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.ApiClients.Queries.Get;
 using XpressShip.Application.Features.ApiClients.Queries.GetAll;
+using XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient;
 using XpressShip.Domain.Abstractions;
 
 namespace XpressShip.API.Endpoints
@@ -56,7 +57,7 @@ namespace XpressShip.API.Endpoints
                 return result.Match(
                      onSuccess: (value) => Results.Ok(value),
                      onFailure: error => error.HandleError(context));
-            });
+            }).WithMetadata(new AuthorizeApiClientAttribute());
 
             clients.MapPatch("/{id:guid}/toggle", async (Guid id, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
             {
@@ -65,7 +66,7 @@ namespace XpressShip.API.Endpoints
                 return result.Match(
                     onSuccess: (value) => Results.Ok(value),
                     onFailure: error => error.HandleError(context));
-            });
+            }).WithMetadata(new AuthorizeApiClientAttribute());
 
             clients.MapDelete("/{id:guid}", async (Guid id, ISender service, HttpContext context, CancellationToken cancellationToken) =>
             {
@@ -74,7 +75,7 @@ namespace XpressShip.API.Endpoints
                 return result.Match(
                     onSuccess: (value) => Results.Ok(value),
                     onFailure: error => Results.Problem());
-            });
+            }).WithMetadata(new AuthorizeApiClientAttribute());
 
 
             clients.MapPatch("/{id:guid}/api-key", async (Guid id, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
@@ -96,6 +97,16 @@ namespace XpressShip.API.Endpoints
                     onFailure: error => error.HandleError(context));
 
             }).WithMetadata(new AuthorizeApiClientAttribute());
+
+            clients
+                .MapPost("shipments", async ([FromBody] CreateShipmentByApiClientCommand request, ISender sender, HttpContext context, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(request, cancellationToken);
+
+                    return result.Match(
+                        onSuccess: (value) => Results.Ok(value),
+                        onFailure: error => error.HandleError(context));
+                }).WithMetadata(new AuthorizeApiClientAttribute());
         }
     }
 }
