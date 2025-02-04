@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using XpressShip.Domain;
-using XpressShip.Domain.Abstractions;
+﻿using System.Text.RegularExpressions;
 using XpressShip.Domain.Entities.Base;
 using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Enums;
+using XpressShip.Domain.Exceptions;
 using XpressShip.Domain.Extensions;
-using XpressShip.Domain.Validation;
 
 namespace XpressShip.Domain.Entities
 {
@@ -43,7 +36,7 @@ namespace XpressShip.Domain.Entities
 
         private Shipment(double weight, string dimensions, ShipmentMethod method, string? note)
         {
-            ValidationRules.ValidateDimensions(dimensions);
+            ValidateDimensions(dimensions);
 
             TrackingNumber = GenerateTrackingNumber();
             Status = ShipmentStatus.Pending;
@@ -162,7 +155,7 @@ namespace XpressShip.Domain.Entities
             weight.EnsureNonZero(nameof(weight));
             rate.EnsureNonNull(nameof(rate));
 
-            ValidationRules.ValidateWeight(weight, rate);
+            ValidateWeight(weight, rate);
 
             return (decimal)(weight * rate.BaseRateForKg);
         }
@@ -171,7 +164,7 @@ namespace XpressShip.Domain.Entities
         {
             rate.EnsureNonNull(nameof(Rate));
 
-            ValidationRules.ValidateDistance(distance, rate);
+            ValidateDistance(distance, rate);
 
             return (decimal)(distance * rate.BaseRateForKm);
         }
@@ -190,7 +183,7 @@ namespace XpressShip.Domain.Entities
         {
             rate.EnsureNonNull(nameof(Rate));
 
-            ValidationRules.ValidateVolume(volume, rate);
+            ValidateVolume(volume, rate);
 
             return volume * (decimal)rate.BaseRateForVolume;
         }
@@ -199,7 +192,7 @@ namespace XpressShip.Domain.Entities
         {
             dimensions.EnsureNonEmpty(nameof(dimensions));
 
-            ValidationRules.ValidateDimensions(dimensions);
+            ValidateDimensions(dimensions);
 
             return dimensions.Split('x').Select(int.Parse).Aggregate((x, y) => x * y);
         }
@@ -268,6 +261,46 @@ namespace XpressShip.Domain.Entities
             var uniquePart = new string(Enumerable.Repeat(chars, 8)
                                                   .Select(s => s[random.Next(s.Length)]).ToArray());
             return $"TRK-{DateTime.UtcNow:yyyyMMdd}-{uniquePart}";  // TRK-20240101-AB12CD34
+        }
+
+
+        public static bool ValidateDimensions(string dimensions, bool throwException = true)
+        {
+           const string DimensionPattern = @"^\s*(\d+)\s*[xX]\s*(\d+)\s*[xX]\s*(\d+)\s*(cm|CM)?\s*$";
+
+            bool isValid = new Regex(DimensionPattern).IsMatch(dimensions);
+            if (!isValid && throwException)
+                throw new XpressShipException("Invalid dimensions format. Expected format: LxWxH.");
+
+            return isValid;
+        }
+
+        public static bool ValidateVolume(double volume, ShipmentRate rate, bool throwException = true)
+        {
+            bool isValid = volume > 0 && rate.MinVolume <= volume && volume <= rate.MaxVolume;
+            if (!isValid && throwException)
+                throw new XpressShipException("Volume is out of the allowed range.");
+
+            return isValid;
+        }
+
+        public static bool ValidateDistance(double distance, ShipmentRate rate, bool throwException = true)
+        {
+            bool isValid = distance > 0 && rate.MinDistance <= distance && distance <= rate.MaxDistance;
+            if (!isValid && throwException)
+                throw new XpressShipException("Distance is out of the allowed range.");
+
+
+            return isValid;
+        }
+
+        public static bool ValidateWeight(double weight, ShipmentRate rate, bool throwException = true)
+        {
+            bool isValid = weight > 0 && rate.MinWeight <= weight && weight <= rate.MaxWeight;
+            if (!isValid && throwException)
+                throw new XpressShipException("Weight is out of the allowed range.");
+
+            return isValid;
         }
     }
 }

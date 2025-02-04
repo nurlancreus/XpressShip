@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using XpressShip.Domain.Entities.Base;
-using XpressShip.Domain.Extensions;
-using XpressShip.Domain.Validation;
+﻿using XpressShip.Domain.Entities.Base;
 
 namespace XpressShip.Domain.Entities
 {
@@ -21,14 +14,11 @@ namespace XpressShip.Domain.Entities
         public ApiClient? Client { get; set; }
         public ICollection<Shipment> ShipmentsOrigin { get; set; } = [];
         public ICollection<Shipment> ShipmentsDestination { get; set; } = [];
-        private Address()
-        {
-
-        }
+        private Address() { }
         private Address(string postalCode, string street, double latitude, double longitude)
         {
-            ValidationRules.IsValidLatitude(latitude);
-            ValidationRules.IsValidLongitude(longitude);
+            IsValidLatitude(latitude);
+            IsValidLongitude(longitude);
 
             PostalCode = postalCode;
             Street = street;
@@ -45,11 +35,11 @@ namespace XpressShip.Domain.Entities
         {
             if (destination == null) throw new ArgumentNullException(nameof(destination), "Destination cannot be null");
 
-            ValidationRules.IsValidLatitude(Latitude);
-            ValidationRules.IsValidLongitude(Longitude);
+            IsValidLatitude(Latitude);
+            IsValidLongitude(Longitude);
 
-            ValidationRules.IsValidLatitude(destination.Latitude);
-            ValidationRules.IsValidLongitude(destination.Longitude);
+            IsValidLatitude(destination.Latitude);
+            IsValidLongitude(destination.Longitude);
 
             return CalculateDistance(Latitude, Longitude, destination.Latitude, destination.Longitude);
         }
@@ -80,5 +70,28 @@ namespace XpressShip.Domain.Entities
         }
 
         private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
+
+        public static bool IsValidLatitude(double latitude, bool throwException = true)
+        {
+            bool isValid = latitude is >= -90 and <= 90;
+
+            if (!isValid && throwException)
+                throw new ArgumentException($"Invalid latitude: {latitude}. Latitude must be between -90 and 90 degrees.");
+
+            return isValid;
+
+        }
+
+        public static bool IsValidLongitude(double longitude, bool throwException = true)
+        {
+
+            bool isValid = longitude is >= -180 and <= 180;
+
+            if (!isValid && throwException)
+                throw new ArgumentException($"Invalid longitude: {longitude}. Longitude must be between -180 and 180 degrees.");
+
+            return isValid;
+
+        }
     }
 }

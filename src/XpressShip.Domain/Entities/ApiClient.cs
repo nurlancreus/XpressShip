@@ -19,23 +19,28 @@ namespace XpressShip.Domain.Entities
         public ICollection<Shipment> Shipments { get; set; } = [];
 
         private ApiClient() { }
-        private ApiClient(string companyName, string email)
+        private ApiClient(string companyName, string email, string hashedSecretKey)
         {
             CompanyName = companyName;
             Email = email;
             ApiKey = GenerateApiKey();
-            SecretKey = GenerateSecretKey();
+            SecretKey = hashedSecretKey;
             IsActive = true;
         }
 
-        public static ApiClient Create(string companyName, string email)
+        public static (ApiClient client, string rawSecretKey) Create(string companyName, string email)
         {
             companyName.EnsureNonEmpty();
             email.EnsureNonEmpty();
 
             email.EnsureValidEmail();
 
-            return new ApiClient(companyName, email);
+            var rawSecretKey = GenerateSecretKey();
+            var hashedSecretKey = HashKey(rawSecretKey);
+
+            var client = new ApiClient(companyName, email, hashedSecretKey);
+
+            return (client, rawSecretKey);
         }
 
         public void Toggle()
@@ -52,25 +57,39 @@ namespace XpressShip.Domain.Entities
             }
         }
 
-        public void UpdateApiKey() => ApiKey = GenerateApiKey();
-        public void UpdaterSecretKey() => ApiKey = GenerateSecretKey();
-
-        private static string GenerateApiKey()
+        public string UpdateApiKey()
         {
-            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-            return HashKey(key);
+            var newApiKey = GenerateApiKey();
+            ApiKey = newApiKey;
+
+            return newApiKey;
+        }
+        public string UpdateSecretKey()
+        {
+            var newRawSecretKey = GenerateSecretKey();
+            SecretKey = HashKey(newRawSecretKey);
+
+            return newRawSecretKey;
         }
 
-        private static string GenerateSecretKey()
-        {
-            var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            return HashKey(key);
-        }
+        private static string GenerateApiKey() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+        private static string GenerateSecretKey() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
         private static string HashKey(string key)
         {
             using var hmac = new HMACSHA256();
             var hashedKey = hmac.ComputeHash(Encoding.UTF8.GetBytes(key));
             return Convert.ToBase64String(hashedKey);
+        }
+
+        public static bool VerifySecretKey(string providedSecret, string storedHashedSecret)
+        {
+            using var hmac = new HMACSHA256();
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(providedSecret));
+            var computedBase64Hash = Convert.ToBase64String(computedHash);
+
+            return storedHashedSecret == computedBase64Hash;
         }
     }
 }
