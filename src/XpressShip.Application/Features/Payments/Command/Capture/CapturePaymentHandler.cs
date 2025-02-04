@@ -1,15 +1,6 @@
-﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using XpressShip.Application.Features.Payments.Command.Capture;
-using XpressShip.Application.Responses;
-using XpressShip.Domain.Enums;
+﻿using XpressShip.Domain.Enums;
 using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
-using System.Threading;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Payment;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +24,6 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
             _paymentRepository = paymentRepository;
             _paymentService = paymentService;
         }
-
         public async Task<Result<string>> Handle(CapturePaymentCommand request, CancellationToken cancellationToken)
         {
             var payment = await _paymentRepository.Table
@@ -47,11 +37,11 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
 
             if (payment.Shipment.ApiClient is ApiClient apiClient)
             {
-                var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+                var clientIdResult = _apiClientSession.GetClientId();
 
-                if (keysResult.IsFailure) return Result<string>.Failure(keysResult.Error);
+                if (clientIdResult.IsFailure) return Result<string>.Failure(clientIdResult.Error);
 
-                if (apiClient.ApiKey != keysResult.Value.apiKey || apiClient.SecretKey != keysResult.Value.secretKey) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
+                if (apiClient.Id != clientIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
             }
             else if (payment.Shipment.Sender is Sender sender)
             {
@@ -61,6 +51,7 @@ namespace XpressShip.Application.Features.Payments.Command.Capture
 
                 if (sender.Id != userIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
             }
+            else return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
 
             if (payment.TransactionId != request.TransactionId) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to capture the payment"));
 

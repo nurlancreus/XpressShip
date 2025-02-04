@@ -1,30 +1,22 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Payments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
+using XpressShip.Domain.Entities;
 using XpressShip.Domain.Entities.Users;
-using XpressShip.Domain.Exceptions;
 
 namespace XpressShip.Application.Features.Payments.Queries.Get
 {
     public class GetPaymentByIdHandler : IQueryHandler<GetPaymentByIdQuery, PaymentDTO>
     {
-        private readonly IApiClientSession _apiClientSessionService;
+        private readonly IApiClientSession _apiClientSession;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IJwtSession _jwtSession;
-        public GetPaymentByIdHandler(IApiClientSession apiClientSessionService, IPaymentRepository paymentRepository, IJwtSession jwtSession)
+        public GetPaymentByIdHandler(IApiClientSession apiClientSession, IPaymentRepository paymentRepository, IJwtSession jwtSession)
         {
-            _apiClientSessionService = apiClientSessionService;
+            _apiClientSession = apiClientSession;
             _paymentRepository = paymentRepository;
             _jwtSession = jwtSession;
         }
@@ -32,8 +24,6 @@ namespace XpressShip.Application.Features.Payments.Queries.Get
         public async Task<Result<PaymentDTO>> Handle(GetPaymentByIdQuery request, CancellationToken cancellationToken)
         {
             var payment = await _paymentRepository.Table
-                             .Include(p => p.Shipment)
-                                 .ThenInclude(s => s.Sender)
                              .Include(p => p.Shipment)
                                  .ThenInclude(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
@@ -57,26 +47,27 @@ namespace XpressShip.Application.Features.Payments.Queries.Get
 
             if (payment is null) return Result<PaymentDTO>.Failure(Error.NotFoundError("Payment is not found"));
 
-            var keysResult = _apiClientSessionService.GetClientApiAndSecretKey();
+            var isAdminResult = _jwtSession.IsAdminAuth();
 
-            if (keysResult.IsSuccess)
+            if (isAdminResult.IsFailure)
             {
-                if (payment.Shipment.ApiClient is null || payment.Shipment.ApiClient.ApiKey != keysResult.Value.apiKey || payment.Shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
-                    throw new UnauthorizedAccessException("You are not authorized to get the payment details");
-            }
-            else if (payment.Shipment.Sender is Sender sender)
-            {
-                var userIdResult = _jwtSession.GetUserId();
+                if (payment.Shipment.ApiClient is ApiClient apiClient)
+                {
+                    var clientIdResult = _apiClientSession.GetClientId();
 
-                if (userIdResult.IsFailure) return Result<PaymentDTO>.Failure(userIdResult.Error);
+                    if (clientIdResult.IsFailure) return Result<PaymentDTO>.Failure(clientIdResult.Error);
 
-                if (sender.Id != userIdResult.Value) return Result<PaymentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get the payment details"));
-            }
-            else
-            {
-                var isAdminResult = _jwtSession.IsAdminAuth();
+                    if (apiClient.Id != clientIdResult.Value) return Result<PaymentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get the payment details"));
+                }
+                else if (payment.Shipment.Sender is Sender sender)
+                {
+                    var userIdResult = _jwtSession.GetUserId();
 
-                if (isAdminResult.IsFailure) return Result<PaymentDTO>.Failure(isAdminResult.Error);
+                    if (userIdResult.IsFailure) return Result<PaymentDTO>.Failure(userIdResult.Error);
+
+                    if (sender.Id != userIdResult.Value) return Result<PaymentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get the payment details"));
+                }
+                else return Result<PaymentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get the payment details"));
             }
 
             return Result<PaymentDTO>.Success(new PaymentDTO(payment));

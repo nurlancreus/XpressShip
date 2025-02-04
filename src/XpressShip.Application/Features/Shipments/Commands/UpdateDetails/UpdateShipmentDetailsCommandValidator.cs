@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Features.Addresses;
@@ -41,7 +36,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
                 .WithMessage("Weight must be greater than zero.");
 
             RuleFor(x => x.Dimensions)
-                .Must(dimensions => string.IsNullOrEmpty(dimensions) || ValidationRules.ValidateDimensions(dimensions, false))
+                .Must(dimensions => string.IsNullOrEmpty(dimensions) || Shipment.ValidateDimensions(dimensions, false))
                 .WithMessage("Dimensions must be in the format 'LxWxH'.");
 
             RuleFor(x => x.Origin)

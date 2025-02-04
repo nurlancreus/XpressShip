@@ -1,25 +1,14 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Abstractions.Services.Session;
-using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
-using XpressShip.Domain.Extensions;
-using XpressShip.Domain.Validation;
 
 namespace XpressShip.Application.Features.ApiClients.Commands.Update
 {
-    public class UpdateApiClientHandler : ICommandHandler<UpdateApiClientCommand, ApiClientDTO>
+    public class UpdateApiClientHandler : ICommandHandler<UpdateApiClientCommand, Guid>
     {
         private readonly IApiClientSession _apiClientSession;
         private readonly IApiClientRepository _apiClientRepository;
@@ -36,19 +25,19 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<ApiClientDTO>> Handle(UpdateApiClientCommand request, CancellationToken cancellationToken)
+        public async Task<Result<Guid>> Handle(UpdateApiClientCommand request, CancellationToken cancellationToken)
         {
-            ApiClient? apiClient = await _apiClientRepository.Table
-                                           .Include(client => client.Address)
-                                           .FirstOrDefaultAsync(client => client.Id == request.Id, cancellationToken);
+            var apiClient = await _apiClientRepository.Table
+                                            .Include(client => client.Address)
+                                            .FirstOrDefaultAsync(client => client.Id == request.Id, cancellationToken);
 
-            if (apiClient is null) return Result<ApiClientDTO>.Failure(Error.NotFoundError("Client is not found"));
+            if (apiClient is null) return Result<Guid>.Failure(Error.NotFoundError("Client is not found"));
 
-            var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+            var clientIdResult = _apiClientSession.GetClientId();
 
-            if (keysResult.IsFailure) return Result<ApiClientDTO>.Failure(keysResult.Error);
+            if (clientIdResult.IsFailure) return Result<Guid>.Failure(clientIdResult.Error);
 
-            if (apiClient.SecretKey != keysResult.Value.secretKey || apiClient.ApiKey != keysResult.Value.apiKey) return Result<ApiClientDTO>.Failure(Error.UnauthorizedError("You are not authorized to update the client"));
+            if (apiClient.Id != clientIdResult.Value) return Result<Guid>.Failure(Error.UnauthorizedError("You are not authorized to update the client"));
 
             if (request.CompanyName is string companyName && companyName != apiClient.CompanyName)
             {
@@ -59,7 +48,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
             {
                 var isClientByEmailExist = await _apiClientRepository.IsExistAsync(c => c.Email == email, cancellationToken);
 
-                if (isClientByEmailExist) return Result<ApiClientDTO>.Failure(Error.ConflictError($"Clint by email ({request.Email}) is already exists."));
+                if (isClientByEmailExist) return Result<Guid>.Failure(Error.ConflictError($"Clint by email ({request.Email}) is already exists."));
 
                 apiClient.Email = email;
             }
@@ -68,7 +57,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
             {
                 var geoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Address.Country, request.Address.City, cancellationToken);
 
-                if (!geoInfoResult.IsSuccess) return Result<ApiClientDTO>.Failure(geoInfoResult.Error);
+                if (geoInfoResult.IsFailure) return Result<Guid>.Failure(geoInfoResult.Error);
 
                 var lat = geoInfoResult.Value.Latitude;
                 var lon = geoInfoResult.Value.Longitude;
@@ -80,11 +69,11 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
                                 .Select(c => new { c.Name, c.Cities })
                                 .FirstOrDefaultAsync(c => c.Name == request.Address.Country, cancellationToken);
 
-                if (country is null) return Result<ApiClientDTO>.Failure(Error.BadRequestError("Country is not supported"));
+                if (country is null) return Result<Guid>.Failure(Error.BadRequestError("Country is not supported"));
 
                 var city = country.Cities.FirstOrDefault(c => c.Name == request.Address.City);
 
-                if (city is null) return Result<ApiClientDTO>.Failure(Error.BadRequestError("City is not supported"));
+                if (city is null) return Result<Guid>.Failure(Error.BadRequestError("City is not supported"));
 
                 address.City = city;
 
@@ -93,7 +82,7 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<ApiClientDTO>.Success(new ApiClientDTO(apiClient));
+            return Result<Guid>.Success(apiClient.Id);
         }
     }
 }

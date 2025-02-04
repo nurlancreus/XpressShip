@@ -1,28 +1,24 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
-using XpressShip.Domain.Exceptions;
+using XpressShip.Domain.Entities;
+using XpressShip.Domain.Entities.Users;
 
 namespace XpressShip.Application.Features.Shipments.Queries.GetById
 {
     public class GetShipmentByIdHandler : IQueryHandler<GetShipmentByIdQuery, ShipmentDTO>
     {
-        private readonly IApiClientSession _clientSessionService;
+        private readonly IJwtSession _jwtSession;
+        private readonly IApiClientSession _apiClientSession;
         private readonly IShipmentRepository _shipmentRepository;
 
-        public GetShipmentByIdHandler(IApiClientSession clientSessionService, IShipmentRepository shipmentRepository)
+        public GetShipmentByIdHandler(IJwtSession jwtSession, IApiClientSession apiClientSession, IShipmentRepository shipmentRepository)
         {
-            _clientSessionService = clientSessionService;
+            _jwtSession = jwtSession;
+            _apiClientSession = apiClientSession;
             _shipmentRepository = shipmentRepository;
         }
 
@@ -31,25 +27,51 @@ namespace XpressShip.Application.Features.Shipments.Queries.GetById
             var shipment = await _shipmentRepository.Table
                                 .Include(s => s.Rate)
                                 .Include(s => s.OriginAddress)
+                                    .ThenInclude(a => a!.City)
+                                        .ThenInclude(c => c.Country)
                                 .Include(s => s.DestinationAddress)
+                                    .ThenInclude(a => a.City)
+                                        .ThenInclude(c => c.Country)
                                 .Include(s => s.ApiClient)
                                     .ThenInclude(c => c!.Address)
+                                        .ThenInclude(a => a.City)
+                                            .ThenInclude(c => c.Country)
+                                .Include(s => s.Sender)
+                                    .ThenInclude(c => c!.Address)
+                                        .ThenInclude(a => a.City)
+                                            .ThenInclude(c => c.Country)
                                 .AsNoTracking()
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
-            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError(nameof(shipment)));
+            if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError("Shipment is not found"));
 
-            if (shipment.ApiClient is not null)
+            var isAdminResult = _jwtSession.IsAdminAuth();
+
+            if (isAdminResult.IsFailure)
             {
-                var keysResult = _clientSessionService.GetClientApiAndSecretKey();
-
-                if (keysResult.IsSuccess)
+                if (shipment.ApiClient is ApiClient apiClient)
                 {
-                    if (shipment.ApiClient.ApiKey != keysResult.Value.apiKey || shipment.ApiClient.SecretKey != keysResult.Value.secretKey)
+                    var clientIdResult = _apiClientSession.GetClientId();
+
+                    if (clientIdResult.IsFailure) Result<ShipmentDTO>.Failure(clientIdResult.Error);
+
+                    if (apiClient.Id != clientIdResult.Value)
                     {
-                        Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
+                        return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
                     }
                 }
+                else if (shipment.Sender is Sender sender)
+                {
+                    var userIdResult = _jwtSession.GetUserId();
+
+                    if (userIdResult.IsFailure) Result<ShipmentDTO>.Failure(userIdResult.Error);
+
+                    if (sender.Id != userIdResult.Value)
+                    {
+                        return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
+                    }
+                }
+                else return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You are not authorized to get shipment details"));
             }
 
             return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));

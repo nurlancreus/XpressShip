@@ -1,19 +1,7 @@
-﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Responses;
+﻿using XpressShip.Application.Features.Shipments.DTOs;
 using XpressShip.Domain.Entities;
-using XpressShip.Domain.Enums;
-using XpressShip.Domain.Validation;
 using Microsoft.EntityFrameworkCore;
-using XpressShip.Domain.Exceptions;
 using XpressShip.Application.Features.Addresses.DTOs;
-using XpressShip.Application.DTOs;
-using XpressShip.Domain.Extensions;
 using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Application.Abstractions.Services;
@@ -66,13 +54,13 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
             if (shipment is null) return Result<ShipmentDTO>.Failure(Error.NotFoundError("Shipment is not found"));
 
-            if (shipment.ApiClient is ApiClient client)
+            if (shipment.ApiClient is ApiClient apiClient)
             {
-                var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+                var clientIdResult = _apiClientSession.GetClientId();
 
-                if (keysResult.IsFailure) return Result<ShipmentDTO>.Failure(keysResult.Error);
+                if (clientIdResult.IsFailure) return Result<ShipmentDTO>.Failure(clientIdResult.Error);
 
-                if (client.ApiKey != keysResult.Value.apiKey || client.SecretKey != keysResult.Value.secretKey)
+                if (apiClient.Id != clientIdResult.Value)
                 {
                     return Result<ShipmentDTO>.Failure(Error.UnauthorizedError("You cannot update this shipment"));
                 }
@@ -101,7 +89,6 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 
                 shipment.Rate = shipmentRate;
             }
-
 
             if (request.Origin is AddressCommandDTO originAddress)
             {

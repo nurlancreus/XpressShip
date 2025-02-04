@@ -1,20 +1,11 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
-using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Extensions;
-using XpressShip.Domain.Validation;
 
 namespace XpressShip.Application.Features.Shipments.Queries.GetAll
 {

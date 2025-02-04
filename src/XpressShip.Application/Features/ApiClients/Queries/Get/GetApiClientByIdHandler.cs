@@ -10,7 +10,6 @@ using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.Payments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 
@@ -50,19 +49,16 @@ namespace XpressShip.Application.Features.ApiClients.Queries.Get
             if (apiClient is null)
                 return Result<ApiClientDTO>.Failure(Error.NotFoundError("Client is not found"));
 
-            var keysResult = _apiClientSessionService.GetClientApiAndSecretKey();
+            var isAdminResult = _jwtSession.IsAdminAuth();
 
-            if (keysResult.IsSuccess)
+            if (isAdminResult.IsFailure)
             {
-                if (apiClient.ApiKey != keysResult.Value.apiKey || apiClient.SecretKey != keysResult.Value.secretKey)
+                var clientIdResult = _apiClientSessionService.GetClientId();
+
+                if (clientIdResult.IsFailure) return Result<ApiClientDTO>.Failure(clientIdResult.Error);
+
+                if (apiClient.Id != clientIdResult.Value)
                     return Result<ApiClientDTO>.Failure(Error.UnauthorizedError("You're not authorized to get client details!"));
-
-            }
-            else
-            {
-                var isAdminResult = _jwtSession.IsAdminAuth();
-
-                if (isAdminResult.IsFailure) return Result<ApiClientDTO>.Failure(isAdminResult.Error);
             }
 
             return Result<ApiClientDTO>.Success(new ApiClientDTO(apiClient));

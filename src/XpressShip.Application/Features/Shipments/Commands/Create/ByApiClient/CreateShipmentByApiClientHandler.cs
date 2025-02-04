@@ -48,16 +48,16 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient
 
         public async Task<Result<ShipmentDTO>> Handle(CreateShipmentByApiClientCommand request, CancellationToken cancellationToken)
         {
-            var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+            var clientIdResult = _apiClientSession.GetClientId();
 
-            if (keysResult.IsFailure) return Result<ShipmentDTO>.Failure(keysResult.Error);
+            if (clientIdResult.IsFailure) return Result<ShipmentDTO>.Failure(clientIdResult.Error);
 
             // Validate API client
             var client = await _apiClientRepository.Table
                 .Include(c => c.Address)
                     .ThenInclude(a => a.City)
                         .ThenInclude(c => c.Country)
-                .FirstOrDefaultAsync(a => a.ApiKey == keysResult.Value.apiKey && a.SecretKey == keysResult.Value.secretKey && a.IsActive, cancellationToken);
+                .FirstOrDefaultAsync(a => a.Id == clientIdResult.Value && a.IsActive, cancellationToken);
 
             if (client is null)
                 return Result<ShipmentDTO>.Failure(Error.NotFoundError("Client is not found"));

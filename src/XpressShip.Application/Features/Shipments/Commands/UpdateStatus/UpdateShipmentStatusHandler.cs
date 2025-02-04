@@ -1,9 +1,4 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Application.Abstractions.Repositories;
@@ -11,13 +6,8 @@ using XpressShip.Application.Abstractions.Services.Mail;
 using XpressShip.Application.Abstractions.Services.Mail.Template;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.DTOs.Mail;
-using XpressShip.Application.Features.Shipments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
-using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
-using XpressShip.Domain.Exceptions;
-using XpressShip.Domain.Extensions;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
 {
@@ -50,16 +40,11 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
         {
             var isAdminResult = _jwtSession.IsAdminAuth();
 
-            if (!isAdminResult.IsSuccess) return Result<string>.Failure(isAdminResult.Error);
+            if (isAdminResult.IsFailure) return Result<string>.Failure(isAdminResult.Error);
 
             var shipment = await _shipmentRepository.Table
-                                .Include(s => s.Rate)
-                                .Include(s => s.OriginAddress)
-                                .Include(s => s.DestinationAddress)
                                 .Include(s => s.ApiClient)
-                                    .ThenInclude(c => c!.Address)
                                 .Include(s => s.Sender)
-                                    .ThenInclude(s => s!.Address)
                                 .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
             if (shipment is null) return Result<string>.Failure(Error.NotFoundError("Shipment is not found"));
@@ -133,8 +118,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateStatus
                     return Result<string>.Failure(Error.UnexpectedError("Invalid Status"));
             }
 
-
-            if (recipientDetails != null && !string.IsNullOrEmpty(body) && !string.IsNullOrEmpty(subject))
+            if (recipientDetails is not null && !string.IsNullOrEmpty(body) && !string.IsNullOrEmpty(subject))
                 await _emailService.SendEmailAsync(recipientDetails, body, subject);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -1,9 +1,4 @@
-﻿using MediatR;
-using XpressShip.Domain.Entities;
-using XpressShip.Domain;
-using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Responses;
-using XpressShip.Application.Abstractions;
+﻿using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
@@ -24,21 +19,21 @@ namespace XpressShip.Application.Features.ApiClients.Commands.UpdateSecretKey
 
         public async Task<Result<string>> Handle(UpdateSecretKeyCommand request, CancellationToken cancellationToken)
         {
-            ApiClient? apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
+            var apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
             if (apiClient is null) return Result<string>.Failure(Error.NotFoundError("Client is not found"));
 
-            var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+            var clientIdResult = _apiClientSession.GetClientId();
 
-            if (keysResult.IsFailure) return Result<string>.Failure(keysResult.Error);
+            if (clientIdResult.IsFailure) return Result<string>.Failure(clientIdResult.Error);
 
-            if (apiClient.SecretKey != keysResult.Value.secretKey || apiClient.ApiKey != keysResult.Value.apiKey) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to update the secret key"));
+            if (apiClient.Id != clientIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to update the secret key"));
 
-            apiClient.UpdaterSecretKey();
+            var newRawSecretKey = apiClient.UpdateSecretKey();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<string>.Success(apiClient.SecretKey);
+            return Result<string>.Success(newRawSecretKey);
         }
     }
 }

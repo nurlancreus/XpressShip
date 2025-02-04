@@ -1,16 +1,9 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using XpressShip.Application.Features.Addresses.DTOs;
+﻿using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Application.Features.ApiClients.DTOs;
 using XpressShip.Application.Features.Payments.DTOs;
 using XpressShip.Application.Features.Rates.DTOs;
 using XpressShip.Application.Features.User.DTOs;
 using XpressShip.Domain.Entities;
-using XpressShip.Domain.Enums;
 
 namespace XpressShip.Application.Features.Shipments.DTOs
 {

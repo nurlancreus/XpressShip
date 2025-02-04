@@ -25,7 +25,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
             RuleFor(x => x.Dimensions)
                 .NotEmpty()
                 .WithMessage("Dimensions are required.")
-                .Must(dimensions => ValidationRules.ValidateDimensions(dimensions, false))
+                .Must(dimensions => Shipment.ValidateDimensions(dimensions, false))
                 .WithMessage("Dimensions must be in the format 'LxWxH'.");
 
             RuleFor(x => x.Origin)

@@ -1,15 +1,8 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Payment;
 using XpressShip.Application.Abstractions.Services.Session;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Entities.Users;
@@ -43,27 +36,27 @@ namespace XpressShip.Application.Features.Payments.Command.Cancel
 
             if (payment is null) return Result<string>.Failure(Error.NotFoundError("Payment is not found"));
 
-            if (payment.Shipment.ApiClient is ApiClient apiClient)
+            var isAdminResult = _jwtSession.IsAdminAuth();
+
+            if (isAdminResult.IsFailure)
             {
-                var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+                if (payment.Shipment.ApiClient is ApiClient apiClient)
+                {
+                    var clientIdResult = _apiClientSession.GetClientId();
 
-                if (keysResult.IsFailure) return Result<string>.Failure(keysResult.Error);
+                    if (clientIdResult.IsFailure) return Result<string>.Failure(clientIdResult.Error);
 
-                if (apiClient.ApiKey != keysResult.Value.apiKey || apiClient.SecretKey != keysResult.Value.secretKey) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));
-            }
-            else if (payment.Shipment.Sender is Sender sender)
-            {
-                var userIdResult = _jwtSession.GetUserId();
+                    if (apiClient.Id != clientIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));
+                }
+                else if (payment.Shipment.Sender is Sender sender)
+                {
+                    var userIdResult = _jwtSession.GetUserId();
 
-                if (userIdResult.IsFailure) return Result<string>.Failure(userIdResult.Error);
+                    if (userIdResult.IsFailure) return Result<string>.Failure(userIdResult.Error);
 
-                if (sender.Id != userIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));
-            }
-            else
-            {
-                var isAdminResult = _jwtSession.IsAdminAuth();
-
-                if (isAdminResult.IsFailure) return Result<string>.Failure(isAdminResult.Error);
+                    if (sender.Id != userIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));
+                }
+                else return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));
             }
 
             if (payment.TransactionId != request.TransactionId) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to cancel the payment"));

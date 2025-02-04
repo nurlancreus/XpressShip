@@ -25,7 +25,7 @@ namespace XpressShip.Application.Features.Rates.DTOs
         public double ExpressDeliveryTimeMultiplier { get; set; }
         public double OvernightDeliveryTimeMultiplier { get; set; }
         public DateTime CreatedAt { get; set; }
-        public ICollection<ShipmentDTO>? Shipments { get; set; }
+        public ICollection<ShipmentDTO> Shipments { get; set; } = [];
 
         public ShipmentRateDTO() { }
 
@@ -49,7 +49,7 @@ namespace XpressShip.Application.Features.Rates.DTOs
             ExpressDeliveryTimeMultiplier = shippingRate.ExpressDeliveryTimeMultiplier;
             OvernightDeliveryTimeMultiplier = shippingRate.OvernightDeliveryTimeMultiplier;
             CreatedAt = shippingRate.CreatedAt;
-            Shipments = shippingRate.Shipments?.Select(s => new ShipmentDTO(s)).ToList();
+            Shipments = shippingRate.Shipments?.Select(s => new ShipmentDTO(s)).ToList() ?? [];
         }
     }
 }

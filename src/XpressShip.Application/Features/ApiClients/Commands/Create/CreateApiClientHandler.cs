@@ -1,24 +1,15 @@
-﻿using FluentValidation;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Extensions;
-using XpressShip.Domain.Validation;
 
 namespace XpressShip.Application.Features.ApiClients.Commands.Create
 {
-    public class CreateApiClientHandler : ICommandHandler<CreateApiClientCommand, ApiClientDTO>
+    public class CreateApiClientHandler : ICommandHandler<CreateApiClientCommand, KeysDTO>
     {
         private readonly IApiClientRepository _apiClientRepository;
         private readonly ICountryRepository _countryRepository;
@@ -33,13 +24,13 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<ApiClientDTO>> Handle(CreateApiClientCommand request, CancellationToken cancellationToken)
+        public async Task<Result<KeysDTO>> Handle(CreateApiClientCommand request, CancellationToken cancellationToken)
         {
-            var apiClient = ApiClient.Create(request.CompanyName, request.Email);
+            var (client, rawSecretKey) = ApiClient.Create(request.CompanyName, request.Email);
 
             var geoInfoResult = await _geoInfoService.GetLocationGeoInfoByNameAsync(request.Address.Country, request.Address.City, cancellationToken);
 
-            if (!geoInfoResult.IsSuccess) return Result<ApiClientDTO>.Failure(geoInfoResult.Error);
+            if (!geoInfoResult.IsSuccess) return Result<KeysDTO>.Failure(geoInfoResult.Error);
 
             var lat = geoInfoResult.Value.Latitude;
             var lon = geoInfoResult.Value.Longitude;
@@ -53,21 +44,21 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Create
 
             country = country.EnsureNonNull();
 
-            if (country is null) return Result<ApiClientDTO>.Failure(Error.BadRequestError("Country is not supported"));
+            if (country is null) return Result<KeysDTO>.Failure(Error.BadRequestError("Country is not supported"));
 
             var city = country.Cities.FirstOrDefault(c => c.Name == request.Address.City);
 
-            if (city is null) return Result<ApiClientDTO>.Failure(Error.BadRequestError("City is not supported"));
+            if (city is null) return Result<KeysDTO>.Failure(Error.BadRequestError("City is not supported"));
 
             address.City = city;
 
-            apiClient.Address = address;
+            client.Address = address;
 
-            await _apiClientRepository.AddAsync(apiClient, cancellationToken);
+            await _apiClientRepository.AddAsync(client, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<ApiClientDTO>.Success(new ApiClientDTO(apiClient));
+            return Result<KeysDTO>.Success(new KeysDTO(rawSecretKey, client.ApiKey));
         }
     }
 }

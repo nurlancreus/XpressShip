@@ -1,14 +1,4 @@
-﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using XpressShip.Domain;
-using XpressShip.Domain.Entities;
-using XpressShip.Application.Features.ApiClients.DTOs;
-using XpressShip.Application.Responses;
-using XpressShip.Application.Abstractions;
+﻿using XpressShip.Application.Abstractions;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
@@ -30,21 +20,21 @@ namespace XpressShip.Application.Features.ApiClients.Commands.UpdateApiKey
 
         public async Task<Result<string>> Handle(UpdateApiKeyCommand request, CancellationToken cancellationToken)
         {
-            ApiClient? apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
+            var apiClient = await _apiClientRepository.GetByIdAsync(request.Id, true, cancellationToken);
 
             if (apiClient is null) return Result<string>.Failure(Error.NotFoundError("Client is not found"));
 
-            var keysResult = _apiClientSession.GetClientApiAndSecretKey();
+            var clientIdResult = _apiClientSession.GetClientId();
 
-            if (keysResult.IsFailure) return Result<string>.Failure(keysResult.Error);
+            if (clientIdResult.IsFailure) return Result<string>.Failure(clientIdResult.Error);
 
-            if (apiClient.SecretKey != keysResult.Value.secretKey || apiClient.ApiKey != keysResult.Value.apiKey) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to update the api key"));
+            if (apiClient.Id != clientIdResult.Value) return Result<string>.Failure(Error.UnauthorizedError("You are not authorized to update the api key"));
 
-            apiClient.UpdateApiKey();
+            var newApiKey = apiClient.UpdateApiKey();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<string>.Success(apiClient.ApiKey);
+            return Result<string>.Success(newApiKey);
         }
     }
 }

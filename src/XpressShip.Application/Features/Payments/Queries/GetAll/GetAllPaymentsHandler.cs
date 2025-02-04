@@ -1,17 +1,9 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Application.Features.Payments.DTOs;
-using XpressShip.Application.Responses;
 using XpressShip.Domain.Abstractions;
-using XpressShip.Domain.Entities;
 
 namespace XpressShip.Application.Features.Payments.Queries.GetAll
 {
@@ -20,7 +12,7 @@ namespace XpressShip.Application.Features.Payments.Queries.GetAll
         private readonly IJwtSession _jwtSession;
         private readonly IPaymentRepository _paymentRepository;
 
-        public GetAllPaymentsHandler(IApiClientSession apiClientSessionService, IPaymentRepository paymentRepository, IJwtSession jwtSession)
+        public GetAllPaymentsHandler(IPaymentRepository paymentRepository, IJwtSession jwtSession)
         {
             _paymentRepository = paymentRepository;
             _jwtSession = jwtSession;
@@ -56,6 +48,11 @@ namespace XpressShip.Application.Features.Payments.Queries.GetAll
             if (request.ClientId is Guid clientId)
             {
                 payments = payments.Where(p => p.Shipment.ApiClient != null && p.Shipment.ApiClient.Id == clientId);
+            }
+
+            if (request.SenderId is string senderId)
+            {
+                payments = payments.Where(p => p.Shipment.ApiClient != null && p.Shipment.SenderId == senderId);
             }
 
             var dtos = await payments.Select(p => new PaymentDTO(p)).ToListAsync(cancellationToken);
