@@ -13,5 +13,7 @@ namespace XpressShip.Domain.Validation
         Task<Result<bool>> ValidateCountryAndCityAsync(string countryName, string cityName, CancellationToken cancellationToken = default);
         Task<Result<bool>> ValidateCountryAndPostalCodeAsync(string countryName, string postalCode, CancellationToken cancellationToken = default);
         Task<Result<bool>> ValidateCountryCityAndPostalCodeAsync(string countryName, string cityName, string postalCode, CancellationToken cancellationToken = default);
+
+        Task RefreshCountriesCacheAsync(CancellationToken cancellationToken = default);
     }
 }

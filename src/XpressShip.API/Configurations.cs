@@ -33,6 +33,9 @@ using XpressShip.Infrastructure.SignalR;
 using XpressShip.Application.Features.ApiClients.Commands.Create;
 using Microsoft.AspNetCore.Authentication;
 using XpressShip.API.Handlers;
+using XpressShip.Infrastructure.Persistence.Interceptors;
+using XpressShip.Application.Abstractions.Services.Token;
+using XpressShip.Infrastructure.Services.Token;
 
 namespace XpressShip.API
 {
@@ -129,12 +132,17 @@ namespace XpressShip.API
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            // Add DbContext Interceptors 
+            builder.Services.AddScoped<CountryChangeInterceptor>();
+
             // Configure DbContext with Scoped lifetime
-            builder.Services.AddDbContext<AppDbContext>(options =>
+            builder.Services.AddDbContext<AppDbContext>((sp, options) =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("Default"), sqlOptions => sqlOptions
                 .MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
                 .EnableSensitiveDataLogging();
+
+                options.AddInterceptors(sp.GetRequiredService<CountryChangeInterceptor>());
             });
 
             // Register Fluent Validation
@@ -173,7 +181,7 @@ namespace XpressShip.API
             builder.Services.AddScoped<IApiClientSession, ApiClientSession>();
             builder.Services.AddScoped<IJwtSession, JwtSession>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
-
+            builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IDistanceService, DistanceService>();
 
             builder.Services.AddScoped<IPaymentMailTemplatesService, PaymentMailTemplatesService>();
