@@ -167,7 +167,7 @@ namespace XpressShip.Infrastructure.Persistence
             #endregion
 
             #region Seed Client
-            var client = ApiClient.Create("My Company", "nurlancreus007@gmail.com");
+            var (client, _) = ApiClient.Create("My Company", "nurlancreus007@gmail.com");
 
             client.Id = Guid.Parse("e1a0b1b0-0001-0000-0000-000000000001");
             client.CreatedAt = SeededAt;
