@@ -1,6 +1,4 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Stripe;
 using XpressShip.Application.Notifications.Payment;
@@ -10,17 +8,17 @@ namespace XpressShip.API.Endpoints
 {
     public static class WebHook
     {
-        public static void RegisterWebHookEndpoints(this IEndpointRouteBuilder routes)
+        public static IEndpointRouteBuilder RegisterWebHookEndpoints(this IEndpointRouteBuilder routes)
         {
-            var webHooks = routes.MapGroup("/api/webhook");
+            var webHooks = routes.MapGroup("/api/webhook").AllowAnonymous();
 
-            webHooks.MapPost("stripe", async (HttpRequest request, IMediator mediator, IOptions<PaymentGatewaySettings> options, ILoggerFactory loggerFactory) =>
+            webHooks.MapPost("stripe", async (HttpRequest request, IMediator mediator, IOptions<PaymentGatewaySettings> options, ILoggerFactory loggerFactory, CancellationToken cancellationToken) =>
             {
                 var logger = loggerFactory.CreateLogger(typeof(WebHook));
 
                 var webHookSecret = options.Value.Stripe.WebhookSecret;
 
-                var json = await new StreamReader(request.Body).ReadToEndAsync();
+                var json = await new StreamReader(request.Body).ReadToEndAsync(cancellationToken);
 
                 try
                 {
@@ -38,25 +36,25 @@ namespace XpressShip.API.Endpoints
                         case EventTypes.PaymentIntentSucceeded:
                             transactionId = ((PaymentIntent)stripeEvent.Data.Object).Id;
                             logger.LogInformation("PaymentIntent succeeded. Transaction ID: {TransactionId}", transactionId);
-                            await mediator.Publish(new PaymentSucceededNotification { TransactionId = transactionId });
+                            await mediator.Publish(new PaymentSucceededNotification { TransactionId = transactionId }, cancellationToken);
                             break;
 
                         case EventTypes.PaymentIntentCanceled:
                             transactionId = ((PaymentIntent)stripeEvent.Data.Object).Id;
                             logger.LogInformation("PaymentIntent canceled. Transaction ID: {TransactionId}", transactionId);
-                            await mediator.Publish(new PaymentCanceledNotification { TransactionId = transactionId });
+                            await mediator.Publish(new PaymentCanceledNotification { TransactionId = transactionId }, cancellationToken);
                             break;
 
                         case EventTypes.PaymentIntentPaymentFailed:
                             transactionId = ((PaymentIntent)stripeEvent.Data.Object).Id;
                             logger.LogWarning("PaymentIntent failed. Transaction ID: {TransactionId}", transactionId);
-                            await mediator.Publish(new PaymentFailedNotification { TransactionId = transactionId });
+                            await mediator.Publish(new PaymentFailedNotification { TransactionId = transactionId }, cancellationToken);
                             break;
 
                         case EventTypes.ChargeRefunded:
                             transactionId = ((Charge)stripeEvent.Data.Object).PaymentIntentId;
                             logger.LogInformation("Charge refunded. Transaction ID: {TransactionId}", transactionId);
-                            await mediator.Publish(new PaymentRefundedNotification { TransactionId = transactionId });
+                            await mediator.Publish(new PaymentRefundedNotification { TransactionId = transactionId }, cancellationToken);
                             break;
 
                         default:
@@ -78,6 +76,8 @@ namespace XpressShip.API.Endpoints
                     return Results.StatusCode(500);
                 }
             });
+
+            return routes;
         }
     }
 }

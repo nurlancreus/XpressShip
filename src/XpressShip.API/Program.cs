@@ -1,3 +1,4 @@
+using XpressShip.API.Endpoints;
 
 namespace XpressShip.API
 {
@@ -12,6 +13,13 @@ namespace XpressShip.API
             var app = builder.Build();
 
             app.RegisterMiddlewares();
+
+            app.RegisterAuthEndpoints()
+               .RegisterApiClientEndpoints()
+               .RegisterShipmentEndpoints()
+               .RegisterPaymentEndpoints()
+               .RegisterWebHookEndpoints();
+
             app.Run();
         }
     }
