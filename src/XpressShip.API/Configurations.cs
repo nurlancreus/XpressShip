@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using XpressShip.API.Middlewares;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
@@ -32,6 +31,8 @@ using XpressShip.Infrastructure.Services.Session;
 using XpressShip.Infrastructure.Services.Validation;
 using XpressShip.Infrastructure.SignalR;
 using XpressShip.Application.Features.ApiClients.Commands.Create;
+using Microsoft.AspNetCore.Authentication;
+using XpressShip.API.Handlers;
 
 namespace XpressShip.API
 {
@@ -39,9 +40,6 @@ namespace XpressShip.API
     {
         public static void RegisterServices(this WebApplicationBuilder builder)
         {
-            // Add services to the container.
-            builder.Services.AddAuthorization();
-
             #region Register Identity
             builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
                     .AddEntityFrameworkStores<AppDbContext>()
@@ -69,14 +67,14 @@ namespace XpressShip.API
             });
             #endregion
 
-            #region Register Authentication
+            #region Register Auth
+            // Configure Authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-             
              .AddJwtBearer(options =>
              {
                  options.TokenValidationParameters = new TokenValidationParameters()
@@ -95,12 +93,32 @@ namespace XpressShip.API
                      NameClaimType = ClaimTypes.Name,
                      RoleClaimType = ClaimTypes.Role
                  };
-             });
+             })
+             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", null);
 
+            // Configure Authorization Policies
+            builder.Services.AddAuthorizationBuilder()
+                .AddPolicy(Constants.AdminsPolicy, policy => policy.RequireAuthenticatedUser().RequireRole("Admin", "SuperAdmin"))
+                .AddPolicy(Constants.RegisteredUsersPolicy,policy => policy.RequireAuthenticatedUser().RequireRole("Sender", "Admin", "SuperAdmin"))
+                .AddPolicy(Constants.ApiClientsPolicy, policy => policy.RequireAuthenticatedUser().RequireRole("ApiClient"))
+                .AddPolicy(Constants.AdminsOrApiClientsPolicy, policy => policy.RequireAssertion(context => 
+                   context.User.IsInRole("Admin")
+                || context.User.IsInRole("SuperAdmin")
+                || context.User.IsInRole("ApiClient")))
+                .AddPolicy(Constants.SendersOrApiClientsPolicy, policy => policy.RequireAssertion(context =>
+                   context.User.IsInRole("Sender")
+                || context.User.IsInRole("ApiClient")))
+                .AddPolicy(Constants.RegisteredUsersOrApiClientsPolicy, policy => policy.RequireAssertion(context => context.User.IsInRole("Sender") 
+                || context.User.IsInRole("Admin") 
+                || context.User.IsInRole("SuperAdmin") 
+                || context.User.IsInRole("ApiClient")));
             #endregion
 
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
+
+            // Add Memory Cache
+            builder.Services.AddMemoryCache();
 
             // Add Exception Handler
             builder.Services.AddExceptionHandler<CustomExceptionHandler>();
@@ -150,9 +168,9 @@ namespace XpressShip.API
 
             // Register Services
             #region Register Client Services
-            builder.Services.AddScoped<IApiClientSession, ApiClientSessionService>();
+            builder.Services.AddScoped<IApiClientSession, ApiClientSession>();
             builder.Services.AddScoped<IAddressValidationService, AddressValidationService>();
-            builder.Services.AddScoped<IApiClientSession, ApiClientSessionService>();
+            builder.Services.AddScoped<IApiClientSession, ApiClientSession>();
             builder.Services.AddScoped<IJwtSession, JwtSession>();
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
 
@@ -198,8 +216,6 @@ namespace XpressShip.API
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
-            app.UseMiddleware<ApiKeyMiddleware>();
 
             app.MapHubs();
         }
