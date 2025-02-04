@@ -86,8 +86,7 @@ namespace XpressShip.Infrastructure.Services.Session
 
         private Result<string> GetClaim(AppClaimType claimType)
         {
-
-            if (!IsUserAuth().IsSuccess)
+            if (IsUserAuth().IsFailure)
                 return Result<string>.Failure(Error.UnauthorizedError("User is not authorized"));
 
             string? claimValue, errorMessage;
