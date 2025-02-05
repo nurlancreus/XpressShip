@@ -36,6 +36,10 @@ using XpressShip.API.Handlers;
 using XpressShip.Infrastructure.Persistence.Interceptors;
 using XpressShip.Application.Abstractions.Services.Token;
 using XpressShip.Infrastructure.Services.Token;
+using XpressShip.Application.Options.Cache;
+using XpressShip.Infrastructure.Services.Background;
+using XpressShip.Application.Abstractions.Services.Notification;
+using XpressShip.Infrastructure.Services.Notification;
 
 namespace XpressShip.API
 {
@@ -133,7 +137,7 @@ namespace XpressShip.API
             builder.Services.AddOpenApi();
 
             // Add DbContext Interceptors 
-            builder.Services.AddScoped<CountryChangeInterceptor>();
+            builder.Services.AddScoped<CustomSaveChangesInterceptor>();
 
             // Configure DbContext with Scoped lifetime
             builder.Services.AddDbContext<AppDbContext>((sp, options) =>
@@ -142,7 +146,7 @@ namespace XpressShip.API
                 .MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
                 .EnableSensitiveDataLogging();
 
-                options.AddInterceptors(sp.GetRequiredService<CountryChangeInterceptor>());
+                options.AddInterceptors(sp.GetRequiredService<CustomSaveChangesInterceptor>());
             });
 
             // Register Fluent Validation
@@ -164,6 +168,10 @@ namespace XpressShip.API
 
             });
 
+            // Register Hosted Services
+            builder.Services.AddHostedService<RefreshCountryDataService>();
+            builder.Services.AddHostedService<ShipmentDeliveryNotificationService>();
+
             // Register Repositories
             #region Register Repositories
             builder.Services.AddScoped<IApiClientRepository, ApiClientRepository>();
@@ -183,6 +191,7 @@ namespace XpressShip.API
             builder.Services.AddScoped<IGeoInfoService, GeoInfoService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IDistanceService, DistanceService>();
+            builder.Services.AddScoped<IAdminNotificationService, AdminNotificationService>();
 
             builder.Services.AddScoped<IPaymentMailTemplatesService, PaymentMailTemplatesService>();
             builder.Services.AddScoped<IShipmentMailTemplatesService, ShipmentMailTemplatesService>();
@@ -197,6 +206,9 @@ namespace XpressShip.API
             #region Register Options
             builder.Services.Configure<APISettings>(APISettings.GeoCodeAPI,
                     builder.Configuration.GetSection("API:GeoCodeAPI"));
+
+            builder.Services.Configure<InMemoryCacheSettings>(InMemoryCacheSettings.CountryData,
+                    builder.Configuration.GetSection("Caching:InMemory:CountryData"));
 
             builder.Services.Configure<ShippingRatesSettings>(builder.Configuration.GetSection("ShippingRatesSettings"));
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailConfiguration"));
