@@ -124,12 +124,14 @@ namespace XpressShip.Domain.Entities
 
             var taxAppliedPrice = ApplyTax(totalCost);
 
-            return taxAppliedPrice;
+            return Math.Round(taxAppliedPrice, 2);
         }
 
         public decimal ApplyTax(decimal totalCost)
         {
             DestinationAddress.EnsureNonNull(nameof(DestinationAddress));
+            DestinationAddress.City.EnsureNonNull(nameof(DestinationAddress.City));
+            DestinationAddress.City.Country.EnsureNonNull(nameof(DestinationAddress.City.Country));
 
             var taxRate = DestinationAddress.City.Country.TaxPercentage / 100;
 
@@ -223,8 +225,8 @@ namespace XpressShip.Domain.Entities
 
         public (string name, string email) GetRecipient()
         {
-            if (ApiClient is null && Sender is null) throw new ArgumentNullException("Both Api Client and Sender cannot be null");
-            else if (ApiClient is not null && Sender is not null) throw new ArgumentException("Either Api Client or Sender should be null");
+            if (ApiClient is null && Sender is null) throw new XpressShipException("Both Api Client and Sender cannot be null");
+            else if (ApiClient is not null && Sender is not null) throw new XpressShipException("Either Api Client or Sender should be null");
 
             var email = (ApiClient?.Email ?? Sender?.Email)!;
             var name = (ApiClient?.CompanyName ?? Sender?.UserName)!;
@@ -266,7 +268,7 @@ namespace XpressShip.Domain.Entities
 
         public static bool ValidateDimensions(string dimensions, bool throwException = true)
         {
-           const string DimensionPattern = @"^\s*(\d+)\s*[xX]\s*(\d+)\s*[xX]\s*(\d+)\s*(cm|CM)?\s*$";
+            const string DimensionPattern = @"^\s*(\d+)\s*[xX]\s*(\d+)\s*[xX]\s*(\d+)\s*(cm|CM)?\s*$";
 
             bool isValid = new Regex(DimensionPattern).IsMatch(dimensions);
             if (!isValid && throwException)

@@ -25,10 +25,20 @@ namespace XpressShip.Domain.Entities
             Name = name;
             CountryId = countryId;
         }
+        private City(string name, Country country)
+        {
+            Name = name;
+            Country = country;
+        }
 
         public static City Create(string name, Guid countryId)
         {
             return new City(name, countryId);
+        }
+
+        public static City Create(string name, Country country)
+        {
+            return new City(name, country);
         }
     }
 }
