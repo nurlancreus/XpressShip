@@ -15,7 +15,6 @@ namespace XpressShip.Infrastructure.Persistence
 {
     public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
     {
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.SeedData();
@@ -31,12 +30,6 @@ namespace XpressShip.Infrastructure.Persistence
 
             base.OnConfiguring(optionsBuilder);
         }
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            UpdateDateTimesWhileSavingInterceptor();
-
-            return base.SaveChangesAsync(cancellationToken);
-        }
 
         public DbSet<Admin> Admins { get; set; } 
         public DbSet<Sender> Senders { get; set; }
@@ -48,21 +41,5 @@ namespace XpressShip.Infrastructure.Persistence
         public DbSet<City> Cities { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
-        private void UpdateDateTimesWhileSavingInterceptor()
-        {
-            var changedEntries = ChangeTracker.Entries<IBase>().Where(e => e.State == EntityState.Modified || e.State == EntityState.Added);
-
-            foreach (var entry in changedEntries)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-        }
     }
 }
