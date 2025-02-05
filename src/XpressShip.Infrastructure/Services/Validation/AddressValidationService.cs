@@ -1,8 +1,11 @@
 ﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using XpressShip.Application.Abstractions.Repositories;
+using XpressShip.Application.Options;
+using XpressShip.Application.Options.Cache;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Validation;
 
@@ -12,12 +15,18 @@ namespace XpressShip.Infrastructure.Services.Validation
     {
         private readonly ICountryRepository _countryRepository;
         private readonly IMemoryCache _cache;
+        private readonly string _cacheKey;
+        private readonly TimeSpan _absoluteDurationInHours;
+        private readonly TimeSpan _slidingDurationInHours;
 
-        private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(6);
-        private const string CacheKey = "Countries";
-
-        public AddressValidationService(ICountryRepository countryRepository, IMemoryCache cache)
+        public AddressValidationService(IOptionsSnapshot<InMemoryCacheSettings> options, ICountryRepository countryRepository, IMemoryCache cache)
         {
+            var cacheSettings = options.Get(InMemoryCacheSettings.CountryData);
+
+            _cacheKey = cacheSettings.CacheKey;
+            _absoluteDurationInHours = TimeSpan.FromHours(cacheSettings.AbsoluteExpirationInHours);
+            _slidingDurationInHours = TimeSpan.FromHours(cacheSettings.SlidingExpirationInHours);
+
             _countryRepository = countryRepository;
             _cache = cache;
         }
@@ -36,9 +45,10 @@ namespace XpressShip.Infrastructure.Services.Validation
         // Get cached country data (or load if missing)
         private async Task<Dictionary<string, (HashSet<string> Cities, string PostalCodePattern)>> GetCachedCountriesDataAsync(CancellationToken cancellationToken)
         {
-            return await _cache.GetOrCreateAsync(CacheKey, async entry =>
+            return await _cache.GetOrCreateAsync(_cacheKey, async entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+                entry.AbsoluteExpirationRelativeToNow = _absoluteDurationInHours;
+                entry.SlidingExpiration = _slidingDurationInHours;
                 return await LoadCountriesDataAsync(cancellationToken);
             }) ?? [];
         }
@@ -105,7 +115,7 @@ namespace XpressShip.Infrastructure.Services.Validation
         public async Task RefreshCountriesCacheAsync(CancellationToken cancellationToken = default)
         {
             var newData = await LoadCountriesDataAsync(cancellationToken);
-            _cache.Set(CacheKey, newData, CacheDuration);
+            _cache.Set(_cacheKey, newData, _absoluteDurationInHours);
         }
     }
 }
