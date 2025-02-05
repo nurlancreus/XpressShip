@@ -29,6 +29,7 @@ namespace XpressShip.Infrastructure.SignalR.Constants
         {
             public const string AdminNewShipmentMessage = "receiveAdminNewShipment";
             public const string AdminShipmentUpdatedMessage = "receiveAdminShipmentUpdated";
+            public const string AdminShipmentDeliveredMessage = "receiveAdminShipmentDelivered";
             public const string AdminShipmentIssueMessage = "receiveAdminShipmentIssue";
 
             public const string AdminNewApiClientMessage = "receiveAdminNewApiClient";

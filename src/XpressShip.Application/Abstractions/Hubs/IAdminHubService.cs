@@ -9,6 +9,7 @@ namespace XpressShip.Application.Abstractions.Hubs
     public interface IAdminHubService
     {
         Task AdminNewShipmentMessageAsync(string message, CancellationToken cancellationToken = default);
+        Task AdminShipmentDeliveredMessageAsync(string message, CancellationToken cancellationToken = default);
         Task AdminShipmentUpdatedMessageAsync(string message, CancellationToken cancellationToken = default);
         Task AdminShipmentIssueMessageAsync(string message, CancellationToken cancellationToken = default);
         Task AdminNewApiClientMessageAsync(string message, CancellationToken cancellationToken = default);
