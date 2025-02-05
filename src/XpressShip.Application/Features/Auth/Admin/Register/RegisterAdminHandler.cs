@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Hubs;
+using XpressShip.Application.Abstractions.Services.Notification;
 using XpressShip.Application.Abstractions.Services.Token;
 using XpressShip.Application.DTOs.Token;
 using XpressShip.Domain.Abstractions;
@@ -18,12 +19,11 @@ namespace XpressShip.Application.Features.Auth.Admin.Register
     public class RegisterAdminHandler : ICommandHandler<RegisterAdminCommand>
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IAdminHubService _adminHubService;
-
-        public RegisterAdminHandler(UserManager<ApplicationUser> userManager, IAdminHubService adminHubService)
+        private readonly IAdminNotificationService _adminNotificationService;
+        public RegisterAdminHandler(UserManager<ApplicationUser> userManager, IAdminNotificationService adminNotificationService)
         {
             _userManager = userManager;
-            _adminHubService = adminHubService;
+            _adminNotificationService = adminNotificationService;
         }
 
         public async Task<Result<Unit>> Handle(RegisterAdminCommand request, CancellationToken cancellationToken)
@@ -38,7 +38,7 @@ namespace XpressShip.Application.Features.Auth.Admin.Register
 
             await _userManager.AddToRoleAsync(admin, "Admin");
 
-            await _adminHubService.AdminNewAdminMessageAsync("New admin account is registered. Activate it.", cancellationToken);
+            await _adminNotificationService.SendNewAdminNotificationAsync(admin, cancellationToken);
 
             return Result<Unit>.Success(Unit.Value);
         }

@@ -2,6 +2,7 @@
 using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
+using XpressShip.Application.Abstractions.Services.Notification;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -15,14 +16,16 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
         private readonly ICountryRepository _countryRepository;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAdminNotificationService _adminNotificationService;
 
-        public UpdateApiClientHandler(IApiClientSession apiClientSession, IApiClientRepository apiClientRepository, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateApiClientHandler(IApiClientSession apiClientSession, IApiClientRepository apiClientRepository, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork, IAdminNotificationService adminNotificationService)
         {
             _apiClientSession = apiClientSession;
             _apiClientRepository = apiClientRepository;
             _countryRepository = countryRepository;
             _geoInfoService = geoInfoService;
             _unitOfWork = unitOfWork;
+            _adminNotificationService = adminNotificationService;
         }
 
         public async Task<Result<Guid>> Handle(UpdateApiClientCommand request, CancellationToken cancellationToken)
@@ -81,6 +84,8 @@ namespace XpressShip.Application.Features.ApiClients.Commands.Update
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _adminNotificationService.SendApiClientUpdatedNotificationAsync(apiClient, cancellationToken);
 
             return Result<Guid>.Success(apiClient.Id);
         }

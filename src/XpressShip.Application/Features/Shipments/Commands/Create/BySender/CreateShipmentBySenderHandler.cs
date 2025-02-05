@@ -9,6 +9,7 @@ using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using XpressShip.Application.Abstractions.Services.Notification;
 
 namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
 {
@@ -21,6 +22,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
         private readonly IShipmentRateRepository _shipmentRateRepository;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAdminNotificationService _adminNotificationService;
 
         public CreateShipmentBySenderHandler(
             IJwtSession jwtSession,
@@ -29,7 +31,8 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
             IShipmentRateRepository shipmentRateRepository,
             IGeoInfoService geoInfoService,
             ICountryRepository countryRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IAdminNotificationService adminNotificationService)
         {
             _jwtSession = jwtSession;
             _userManager = userManager;
@@ -38,6 +41,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
             _geoInfoService = geoInfoService;
             _countryRepository = countryRepository;
             _unitOfWork = unitOfWork;
+            _adminNotificationService = adminNotificationService;
         }
 
         public async Task<Result<ShipmentDTO>> Handle(CreateShipmentBySenderCommand request, CancellationToken cancellationToken)
@@ -140,6 +144,8 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.BySender
             await _shipmentRepository.AddAsync(shipment, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _adminNotificationService.SendNewShipmentNotificationAsync(shipment, cancellationToken);
 
             return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
         }

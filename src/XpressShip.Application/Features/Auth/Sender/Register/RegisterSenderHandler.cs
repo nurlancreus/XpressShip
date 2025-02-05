@@ -10,6 +10,7 @@ using XpressShip.Application.Abstractions;
 using XpressShip.Application.Abstractions.Hubs;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services;
+using XpressShip.Application.Abstractions.Services.Notification;
 using XpressShip.Application.Features.Auth.Sender.Register;
 using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
@@ -24,14 +25,13 @@ namespace XpressShip.Application.Features.Auth.Sender.Register
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICountryRepository _countryRepository;
         private readonly IGeoInfoService _geoInfoService;
-        private readonly IAdminHubService _adminHubService;
-
-        public RegisterSenderHandler(UserManager<ApplicationUser> userManager, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IAdminHubService adminHubService)
+        private readonly IAdminNotificationService _adminNotificationService;
+        public RegisterSenderHandler(UserManager<ApplicationUser> userManager, ICountryRepository countryRepository, IGeoInfoService geoInfoService, IAdminNotificationService adminNotificationService)
         {
             _userManager = userManager;
             _countryRepository = countryRepository;
             _geoInfoService = geoInfoService;
-            _adminHubService = adminHubService;
+            _adminNotificationService = adminNotificationService;
         }
 
         public async Task<Result<Unit>> Handle(RegisterSenderCommand request, CancellationToken cancellationToken)
@@ -60,7 +60,7 @@ namespace XpressShip.Application.Features.Auth.Sender.Register
 
             if (!registerResult.Succeeded) return Result<Unit>.Failure(Error.RegisterError());
 
-            await _adminHubService.AdminNewSenderMessageAsync("New sender account is registered. Activate it.", cancellationToken);
+            await _adminNotificationService.SendNewSenderNotificationAsync(sender, cancellationToken);
 
             return Result<Unit>.Success(Unit.Value);
         }

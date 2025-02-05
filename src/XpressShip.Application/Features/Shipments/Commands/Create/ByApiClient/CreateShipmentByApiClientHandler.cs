@@ -15,6 +15,7 @@ using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Validation;
 using Microsoft.EntityFrameworkCore;
+using XpressShip.Application.Abstractions.Services.Notification;
 
 namespace XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient
 {
@@ -27,6 +28,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient
         private readonly IApiClientRepository _apiClientRepository;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAdminNotificationService _adminNotificationService;
 
         public CreateShipmentByApiClientHandler(
             IApiClientSession apiClientSession,
@@ -35,7 +37,8 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient
             IApiClientRepository apiClientRepository,
             IGeoInfoService geoInfoService,
             ICountryRepository countryRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IAdminNotificationService adminNotificationService)
         {
             _apiClientSession = apiClientSession;
             _shipmentRepository = shipmentRepository;
@@ -44,6 +47,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient
             _geoInfoService = geoInfoService;
             _countryRepository = countryRepository;
             _unitOfWork = unitOfWork;
+            _adminNotificationService = adminNotificationService;
         }
 
         public async Task<Result<ShipmentDTO>> Handle(CreateShipmentByApiClientCommand request, CancellationToken cancellationToken)
@@ -147,6 +151,8 @@ namespace XpressShip.Application.Features.Shipments.Commands.Create.ByApiClient
             await _shipmentRepository.AddAsync(shipment, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _adminNotificationService.SendNewShipmentNotificationAsync(shipment, cancellationToken);
 
             return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
         }

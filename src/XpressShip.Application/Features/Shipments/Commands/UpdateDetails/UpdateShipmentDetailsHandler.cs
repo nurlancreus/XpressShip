@@ -8,6 +8,7 @@ using XpressShip.Application.Abstractions.Services;
 using XpressShip.Application.Abstractions.Repositories;
 using XpressShip.Application.Abstractions.Services.Session;
 using XpressShip.Domain.Entities.Users;
+using XpressShip.Application.Abstractions.Services.Notification;
 
 namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
 {
@@ -20,8 +21,9 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
         private readonly IShipmentRateRepository _shipmentRateRepository;
         private readonly IGeoInfoService _geoInfoService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAdminNotificationService _adminNotificationService;
 
-        public UpdateShipmentDetailsHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork)
+        public UpdateShipmentDetailsHandler(IApiClientSession apiClientSession, IJwtSession jwtSession, ICountryRepository countryRepository, IShipmentRepository shipmentRepository, IShipmentRateRepository shipmentRateRepository, IGeoInfoService geoInfoService, IUnitOfWork unitOfWork, IAdminNotificationService adminNotificationService)
         {
             _apiClientSession = apiClientSession;
             _jwtSession = jwtSession;
@@ -30,6 +32,7 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             _shipmentRateRepository = shipmentRateRepository;
             _geoInfoService = geoInfoService;
             _unitOfWork = unitOfWork;
+            _adminNotificationService = adminNotificationService;
         }
 
         public async Task<Result<ShipmentDTO>> Handle(UpdateShipmentDetailsCommand request, CancellationToken cancellationToken)
@@ -139,6 +142,8 @@ namespace XpressShip.Application.Features.Shipments.Commands.UpdateDetails
             shipment.Cost = shipment.CalculateShippingCost();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _adminNotificationService.SendShipmentUpdatedNotificationAsync(shipment, cancellationToken);
 
             return Result<ShipmentDTO>.Success(new ShipmentDTO(shipment));
         }
