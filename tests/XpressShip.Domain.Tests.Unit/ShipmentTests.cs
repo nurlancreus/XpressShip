@@ -3,7 +3,8 @@ using XpressShip.Domain.Entities;
 using XpressShip.Domain.Enums;
 using XpressShip.Domain.Exceptions;
 using FluentAssertions;
-using XpressShip.Tests.Common;
+using DataConstants = XpressShip.Tests.Common.Constants.Constants;
+using XpressShip.Tests.Common.Factories;
 
 namespace XpressShip.Domain.Tests.Unit
 {
@@ -13,10 +14,10 @@ namespace XpressShip.Domain.Tests.Unit
         public void Create_ShouldInitializeWithPendingStatus()
         {
             // Arrange
-            double weight = 10.5;
-            string dimensions = "10x20x30";
-            ShipmentMethod method = ShipmentMethod.Standard;
-            string note = "Handle with care";
+            double weight = DataConstants.Shipment.Weight;
+            string dimensions = DataConstants.Shipment.Dimensions;
+            ShipmentMethod method = DataConstants.Shipment.Method;
+            string note = DataConstants.Shipment.Note;
 
             // Act
             var shipment = Shipment.Create(weight, dimensions, method, note);
@@ -35,12 +36,12 @@ namespace XpressShip.Domain.Tests.Unit
         public void Update_ShouldModifyShipmentProperties()
         {
             // Arrange
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
-            double newWeight = 7.5;
-            string newDimensions = "10x10x10";
-            string newMethod = ShipmentMethod.Overnight.ToString();
-            string newNote = "Handle with care";
+            double newWeight = DataConstants.Shipment.NewWeight;
+            string newDimensions = DataConstants.Shipment.NewDimensions;
+            string newMethod = DataConstants.Shipment.NewMethod.ToString();
+            string newNote = DataConstants.Shipment.NewNote;
 
             // Act
             shipment.Update(newWeight, newDimensions, newMethod, newNote);
@@ -53,42 +54,15 @@ namespace XpressShip.Domain.Tests.Unit
         }
 
         [Fact]
-        public void CalculateShippingCost_ShouldCorrectlyCalculateShippingCost()
+        public void CalculateShippingCost_WhenApplyingSmallRateForSmallShipment_ShouldCorrectlyCalculateShippingCost()
         {
             // Arrange
-            double weight = 4.5;
-            string dimensions = "2x3x3";
-            ShipmentMethod method = ShipmentMethod.Standard;
-            string note = "Handle with care";
-            var shipment = Shipment.Create(weight, dimensions, method, note);
+            var shipment = Factory.Shipment.GenerateSmallShipment();
 
-            var name = "Small Package - Local";
-            var desc = "Rate for small packages within local regions.";
-            var baseRate = 10.00m;
-            var minWeight = 0;
-            var maxWeight = 5;
-            var minDistance = 0;
-            var maxDistance = 100;
-            var minVolume = 0;
-            var maxVolume = 20;
-            var baseRateForKm = 0.05;
-            var baseRateForKg = 1.5;
-            var baseRateForVolume = 2.0;
-            var expressRateMultiplier = 1.2;
-            var overnightRateMultiplier = 1.5;
-            var expressDeliveryMultiplier = 0.8;
-            var overnightDeliveryMultiplier = 0.5;
+            var shipmentRate = Factory.ShipmentRate.GenerateSmallRate();
 
-            var shipmentRate = ShipmentRate.Create(name, desc, baseRate, minWeight, maxWeight, minDistance, maxDistance, minVolume, maxVolume, baseRateForKm, baseRateForKg, baseRateForVolume, expressRateMultiplier, overnightRateMultiplier, expressDeliveryMultiplier, overnightDeliveryMultiplier);
-
-            var origin = Address.Create("XYZ1000", "St.John", 80, -170);
-            var destination = Address.Create("ZYX1000", "St.James", 80, -175);
-
-            var destinationCountry = Country.Create("Azerbaijan", "AZE", @"AZ\s\d{4}$", 20);
-
-            var destinarionCity = City.Create("Baku", destinationCountry);
-
-            destination.City = destinarionCity;
+            var origin = Factory.Address.GenerateOriginAddress();
+            var destination = Factory.Address.GenerateDestinationAddress();
 
             shipment.Rate = shipmentRate;
             shipment.OriginAddress = origin;
@@ -101,6 +75,94 @@ namespace XpressShip.Domain.Tests.Unit
             answer.Should().NotBe(0);
         }
 
+        [Fact]
+        public void CalculateShippingCost_WhenApplyingMediumRateForMediumShipment_ShouldCorrectlyCalculateShippingCost()
+        {
+            // Arrange
+            var shipment = Factory.Shipment.GenerateMediumShipment();
+
+            var shipmentRate = Factory.ShipmentRate.GenerateMediumRate();
+
+            var origin = Factory.Address.GenerateOriginAddress();
+            var destination = Factory.Address.GenerateDestinationAddress();
+
+            shipment.Rate = shipmentRate;
+            shipment.OriginAddress = origin;
+            shipment.DestinationAddress = destination;
+
+            // Act
+            var answer = shipment.CalculateShippingCost();
+
+            // Assert
+            answer.Should().NotBe(0);
+        }
+
+        [Fact]
+        public void CalculateShippingCost_WhenApplyingLargeRateForLargeShipment_ShouldCorrectlyCalculateShippingCost()
+        {
+            // Arrange
+            var shipment = Factory.Shipment.GenerateLargeShipment();
+
+            var shipmentRate = Factory.ShipmentRate.GenerateLargeRate();
+
+            var origin = Factory.Address.GenerateOriginAddress();
+            var destination = Factory.Address.GenerateDestinationAddress();
+
+            shipment.Rate = shipmentRate;
+            shipment.OriginAddress = origin;
+            shipment.DestinationAddress = destination;
+
+            // Act
+            var answer = shipment.CalculateShippingCost();
+
+            // Assert
+            answer.Should().NotBe(0);
+        }
+
+        [Fact]
+        public void CalculateShippingCost_WhenApplyingMediumRateForLargeShipment_ShouldThrowException()
+        {
+            // Arrange
+            var shipment = Factory.Shipment.GenerateLargeShipment();
+
+            var shipmentRate = Factory.ShipmentRate.GenerateMediumRate();
+
+            var origin = Factory.Address.GenerateOriginAddress();
+            var destination = Factory.Address.GenerateDestinationAddress();
+
+            shipment.Rate = shipmentRate;
+            shipment.OriginAddress = origin;
+            shipment.DestinationAddress = destination;
+
+            // Act
+            var action = () => shipment.CalculateShippingCost();
+
+            // Assert
+            action.Should().ThrowExactly<XpressShipException>();
+        }
+
+        [Fact]
+        public void CalculateShippingCost_WhenApplyingSmallRateForMediumShipment_ShouldThrowException()
+        {
+            // Arrange
+            var shipment = Factory.Shipment.GenerateMediumShipment();
+
+            var shipmentRate = Factory.ShipmentRate.GenerateSmallRate();
+
+            var origin = Factory.Address.GenerateOriginAddress();
+            var destination = Factory.Address.GenerateDestinationAddress();
+
+            shipment.Rate = shipmentRate;
+            shipment.OriginAddress = origin;
+            shipment.DestinationAddress = destination;
+
+            // Act
+            var action = () => shipment.CalculateShippingCost();
+
+            // Assert
+            action.Should().ThrowExactly<XpressShipException>();
+        }
+
         [Theory]
         [InlineData(100, 80)]
         [InlineData(80, 64)]
@@ -109,14 +171,9 @@ namespace XpressShip.Domain.Tests.Unit
         public void ApplyTax_ShouldApplyTaxToTheTotalCost(int totalCost, int taxAppliedCost)
         {
             // Arrange
-            const int taxPercentage = 20;
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
-            var destination = Address.Create("ZYX1000", "St.James", 80, -175);
-            var destinationCountry = Country.Create("Azerbaijan", "AZE", @"AZ\s\d{4}$", taxPercentage);
-            var destinarionCity = City.Create("Baku", destinationCountry);
-
-            destination.City = destinarionCity;
+            var destination = Factory.Address.GenerateDestinationAddress(taxPercentage: 20);
             shipment.DestinationAddress = destination;
 
             // Act
@@ -129,25 +186,207 @@ namespace XpressShip.Domain.Tests.Unit
         public void ApplyTax_WhenNotGivingDestination_ShouldThrowException()
         {
             // Arrange
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
             // Act
             var action = () => shipment.ApplyTax(100);
 
-            //Assert
+            // Assert
             action.Should().ThrowExactly<XpressShipException>();
+        }
+
+        [Theory]
+        [InlineData(100)]
+        [InlineData(80)]
+        [InlineData(200)]
+        public void ValidateDistance_WhenDistanceIsNotOutOfRange_ShouldReturnTrue(double distance)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Distance: 0 - 200
+
+            // Act
+            var answer = Shipment.ValidateDistance(distance, rate);
+
+            // Assert
+            answer.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(1000)]
+        [InlineData(-80)]
+        [InlineData(201)]
+        public void ValidateDistance_WhenDistanceIsOutOfRange_ShouldThrowException(double distance)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Distance: 0 - 200
+
+            // Act
+            var action = () => Shipment.ValidateDistance(distance, rate);
+
+            // Assert
+            action.Should().ThrowExactly<XpressShipException>();
+        }
+
+        [Theory]
+        [InlineData(1000)]
+        [InlineData(-80)]
+        [InlineData(201)]
+        public void ValidateDistance_WhenDistanceIsOutOfRangeAndThrowExceptionIsFalse_ShouldReturnFalse(double distance)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Distance: 0 - 200
+
+            // Act
+            var answer = Shipment.ValidateDistance(distance, rate, false);
+
+            // Assert
+            answer.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(10)]
+        [InlineData(8)]
+        [InlineData(20)]
+        public void ValidateWeight_WhenWeightIsNotOutOfRange_ShouldReturnTrue(double weight)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Weight: 0 - 20
+
+            // Act
+            var answer = Shipment.ValidateWeight(weight, rate);
+
+            // Assert
+            answer.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(100)]
+        [InlineData(-1)]
+        [InlineData(21)]
+        public void ValidateWeight_WhenWeightIsOutOfRange_ShouldThrowException(double weight)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Weight: 0 - 20
+
+            // Act
+            var action = () => Shipment.ValidateWeight(weight, rate);
+
+            // Assert
+            action.Should().ThrowExactly<XpressShipException>();
+        }
+
+        [Theory]
+        [InlineData(100)]
+        [InlineData(-1)]
+        [InlineData(21)]
+        public void ValidateWeight_WhenWeightIsOutOfRangeAndThrowExceptionIsFalse_ShouldReturnFalse(double weight)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Weight: 0 - 20
+
+            // Act
+            var answer = Shipment.ValidateWeight(weight, rate, false);
+
+            // Assert
+            answer.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(30)]
+        [InlineData(20)]
+        public void ValidateVolume_WhenVolumeIsNotOutOfRange_ShouldReturnTrue(double volume)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Volume: 20 - 50
+
+            // Act
+            var answer = Shipment.ValidateVolume(volume, rate);
+
+            // Assert
+            answer.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(100)]
+        [InlineData(-1)]
+        [InlineData(51)]
+        public void ValidateVolume_WhenVolumeIsOutOfRange_ShouldThrowException(double voulme)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Volume: 20 - 50
+
+            // Act
+            var action = () => Shipment.ValidateVolume(voulme, rate);
+
+            // Assert
+            action.Should().ThrowExactly<XpressShipException>();
+        }
+
+        [Theory]
+        [InlineData(100)]
+        [InlineData(-1)]
+        [InlineData(51)]
+        public void ValidateVolume_WhenVolumeIsOutOfRangeAndThrowExceptionIsFalse_ShouldReturnFalse(double voulme)
+        {
+            // Arrange
+            var rate = Factory.ShipmentRate.GenerateMediumRate(); // Volume: 20 - 50
+
+            // Act
+            var answer = Shipment.ValidateVolume(voulme, rate, false);
+
+            // Assert
+            answer.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ValidateDimensions_WhenValidFormat_ShouldReturnTrue()
+        {
+            // Arrange
+            const string validDimensions = "10x20x30";
+
+            // Act
+            var answer = Shipment.ValidateDimensions(validDimensions);
+
+            // Assert
+            answer.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("10-20-30")]
+        [InlineData("10.20.30")]
+        [InlineData("10x20x30x40")]
+        public void ValidateDimensions_WhenInvalidFormat_ShouldThrowException(string invalidDimensions)
+        {
+            // Arrange & Act
+            var action = () => Shipment.ValidateDimensions(invalidDimensions);
+
+            // Assert
+            action.Should().ThrowExactly<XpressShipException>();
+        }
+
+        [Theory]
+        [InlineData("10-20-30")]
+        [InlineData("10.20.30")]
+        [InlineData("10x20x30x40")]
+        public void ValidateDimensions_WhenInvalidFormatAndThrowExceptionIsFalse_ShouldReturnFalse(string invalidDimensions)
+        {
+            // Arrange & Act
+            var answer = Shipment.ValidateDimensions(invalidDimensions, false);
+
+            // Assert
+            answer.Should().BeFalse();
         }
 
         [Fact]
         public void MakeDelivered_ShouldUpdateStatusAndClearEstimatedDate()
         {
             // Arrange
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
-            shipment.OriginAddress = DataFactory.CreateFakeAddress();
-            shipment.DestinationAddress = DataFactory.CreateFakeAddress();
+            shipment.OriginAddress = Factory.Address.CreateFakeAddress();
+            shipment.DestinationAddress = Factory.Address.CreateFakeAddress();
 
-            shipment.Rate = DataFactory.CreateFakeShipmentRate();
+            shipment.Rate = Factory.ShipmentRate.CreateFakeShipmentRate();
 
             shipment.MakeShipped();
 
@@ -163,12 +402,12 @@ namespace XpressShip.Domain.Tests.Unit
         public void MakeShipped_ShouldSetStatusAndEstimatedDate()
         {
             // Arrange
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
-            shipment.OriginAddress = DataFactory.CreateFakeAddress();
-            shipment.DestinationAddress = DataFactory.CreateFakeAddress();
+            shipment.OriginAddress = Factory.Address.CreateFakeAddress();
+            shipment.DestinationAddress = Factory.Address.CreateFakeAddress();
 
-            shipment.Rate = DataFactory.CreateFakeShipmentRate();
+            shipment.Rate = Factory.ShipmentRate.CreateFakeShipmentRate();
 
             // Act
             shipment.MakeShipped();
@@ -178,30 +417,17 @@ namespace XpressShip.Domain.Tests.Unit
             shipment.EstimatedDate.Should().NotBeNull();
         }
 
-        [Fact]
-        public void CalculateVolume_ShouldReturnCorrectVolume()
+        [Theory]
+        [InlineData("2x3x4", 24)]
+        [InlineData("3x3x4", 36)]
+        [InlineData("1x1x1", 1)]
+        public void CalculateVolume_WhenProvidingValidDimensions_ShouldReturnCorrectVolume(string dimensions, int answer)
         {
-            // Arrange
-            string dimensions = "2x3x4";
-
-            // Act
+            // Arrange & Act
             int volume = Shipment.CalculateVolume(dimensions);
 
             // Assert
-            volume.Should().Be(24);
-        }
-
-        [Fact]
-        public void ValidateDimensions_InvalidFormat_ShouldThrowException()
-        {
-            // Arrange
-            string invalidDimensions = "10-20-30";
-
-            // Act
-            var action = () => Shipment.ValidateDimensions(invalidDimensions);
-
-            // Assert
-            action.Should().ThrowExactly<XpressShipException>();
+            volume.Should().Be(answer);
         }
 
         [Fact]
@@ -210,7 +436,7 @@ namespace XpressShip.Domain.Tests.Unit
             // Arrange
             var sender = Sender.Create("John", "Doe", "johnDoe", "john@example.com", "+994514566778");
 
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
             shipment.Sender = sender;
 
@@ -228,7 +454,7 @@ namespace XpressShip.Domain.Tests.Unit
             // Arrange
             var (client, _) = ApiClient.Create("Test Company", "testCompany@example.com");
 
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
             shipment.ApiClient = client;
 
@@ -244,10 +470,10 @@ namespace XpressShip.Domain.Tests.Unit
         public void GetRecipient_ShouldThrowException_WhenBothSenderAndApiClientAreNotNull()
         {
             // Arrange
-            var sender = DataFactory.CreateFakeSender();
-            var (client, _) = DataFactory.CreateFakeApiClient();
+            var sender = Factory.Sender.GenerateSender();
+            var (client, _) = Factory.ApiClient.GenerateApiClient();
 
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.GenerateSmallShipment();
 
             shipment.ApiClient = client;
             shipment.Sender = sender;
@@ -263,7 +489,7 @@ namespace XpressShip.Domain.Tests.Unit
         public void GetRecipient_ShouldThrowException_WhenBothSenderAndApiClientAreNull()
         {
             // Arrange
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
             // Act
             var action = () => shipment.GetRecipient();
@@ -276,7 +502,7 @@ namespace XpressShip.Domain.Tests.Unit
         public void GenerateTrackingNumber_ShouldReturnValidFormat()
         {
             // Act
-            var shipment = DataFactory.CreateFakeShipment();
+            var shipment = Factory.Shipment.CreateFakeShipment();
 
             string trackingNumber = shipment.TrackingNumber;
 

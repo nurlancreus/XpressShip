@@ -292,7 +292,6 @@ namespace XpressShip.Domain.Entities
             if (!isValid && throwException)
                 throw new XpressShipException("Distance is out of the allowed range.");
 
-
             return isValid;
         }
 
