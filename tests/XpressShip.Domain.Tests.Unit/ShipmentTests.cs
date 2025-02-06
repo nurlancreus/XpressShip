@@ -1,12 +1,11 @@
-﻿using XpressShip.Domain.Enums;
-using XpressShip.Domain.Exceptions;
-using XpressShip.Domain.Entities.Users;
-
-using ShipmentEntity = XpressShip.Domain.Entities.Shipment;
-using FluentAssertions;
+﻿using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Entities;
+using XpressShip.Domain.Enums;
+using XpressShip.Domain.Exceptions;
+using FluentAssertions;
+using XpressShip.Tests.Common;
 
-namespace XpressShip.Shipment.Tests.Unit
+namespace XpressShip.Domain.Tests.Unit
 {
     public class ShipmentTests
     {
@@ -20,7 +19,7 @@ namespace XpressShip.Shipment.Tests.Unit
             string note = "Handle with care";
 
             // Act
-            var shipment = ShipmentEntity.Create(weight, dimensions, method, note);
+            var shipment = Shipment.Create(weight, dimensions, method, note);
 
             // Assert
             shipment.Should().NotBeNull();
@@ -61,7 +60,7 @@ namespace XpressShip.Shipment.Tests.Unit
             string dimensions = "2x3x3";
             ShipmentMethod method = ShipmentMethod.Standard;
             string note = "Handle with care";
-            var shipment = ShipmentEntity.Create(weight, dimensions, method, note);
+            var shipment = Shipment.Create(weight, dimensions, method, note);
 
             var name = "Small Package - Local";
             var desc = "Rate for small packages within local regions.";
@@ -186,7 +185,7 @@ namespace XpressShip.Shipment.Tests.Unit
             string dimensions = "2x3x4";
 
             // Act
-            int volume = ShipmentEntity.CalculateVolume(dimensions);
+            int volume = Shipment.CalculateVolume(dimensions);
 
             // Assert
             volume.Should().Be(24);
@@ -199,7 +198,7 @@ namespace XpressShip.Shipment.Tests.Unit
             string invalidDimensions = "10-20-30";
 
             // Act
-            var action = () => ShipmentEntity.ValidateDimensions(invalidDimensions);
+            var action = () => Shipment.ValidateDimensions(invalidDimensions);
 
             // Assert
             action.Should().ThrowExactly<XpressShipException>();

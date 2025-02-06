@@ -1,19 +1,17 @@
 ﻿using Bogus;
-using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Entities;
+using XpressShip.Domain.Entities.Users;
 using XpressShip.Domain.Enums;
 
-using ShipmentEntity = XpressShip.Domain.Entities.Shipment;
-
-namespace XpressShip.Shipment.Tests.Unit
+namespace XpressShip.Tests.Common
 {
-    internal class DataFactory
+    public class DataFactory
     {
         private static readonly Faker _faker = new();
 
-        public static ShipmentEntity CreateFakeShipment()
+        public static Shipment CreateFakeShipment()
         {
-            return ShipmentEntity.Create(
+            return Shipment.Create(
                 _faker.Random.Double(0.5, 50), // Random weight
                 $"{_faker.Random.Int(5, 50)}x{_faker.Random.Int(5, 50)}x{_faker.Random.Int(5, 50)}", // Random dimensions
                 _faker.PickRandom<ShipmentMethod>(), // Random shipment method
