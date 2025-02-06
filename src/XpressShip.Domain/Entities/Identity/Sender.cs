@@ -34,19 +34,5 @@ namespace XpressShip.Domain.Entities.Users
         {
             return new Sender(firstName, lastName, userName, email, phoneNumber);
         }
-
-        public void Toggle()
-        {
-            if (IsActive)
-            {
-                IsActive = false;
-                DeActivatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                IsActive = true;
-                DeActivatedAt = null;
-            }
-        }
     }
 }

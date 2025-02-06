@@ -1,4 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
 using System.Text;
 using XpressShip.Domain;
 using XpressShip.Domain.Entities.Base;
@@ -8,6 +10,9 @@ namespace XpressShip.Domain.Entities
 {
     public class ApiClient : BaseEntity
     {
+        [NotMapped]
+        private static readonly string AppSecretKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(12));
+
         public string CompanyName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string ApiKey { get; set; } = string.Empty;
@@ -25,7 +30,7 @@ namespace XpressShip.Domain.Entities
             Email = email;
             ApiKey = GenerateApiKey();
             SecretKey = hashedSecretKey;
-            IsActive = true;
+            IsActive = false;
         }
 
         public static (ApiClient client, string rawSecretKey) Create(string companyName, string email)
@@ -45,16 +50,9 @@ namespace XpressShip.Domain.Entities
 
         public void Toggle()
         {
-            if (IsActive)
-            {
-                IsActive = false;
-                DeActivatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                IsActive = true;
-                DeActivatedAt = null;
-            }
+            IsActive = !IsActive;
+
+            DeActivatedAt = !IsActive ? DateTime.UtcNow : null;
         }
 
         public string UpdateApiKey()
@@ -78,16 +76,15 @@ namespace XpressShip.Domain.Entities
 
         private static string HashKey(string key)
         {
-            using var hmac = new HMACSHA256();
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(AppSecretKey));
             var hashedKey = hmac.ComputeHash(Encoding.UTF8.GetBytes(key));
+
             return Convert.ToBase64String(hashedKey);
         }
 
         public static bool VerifySecretKey(string providedSecret, string storedHashedSecret)
         {
-            using var hmac = new HMACSHA256();
-            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(providedSecret));
-            var computedBase64Hash = Convert.ToBase64String(computedHash);
+            var computedBase64Hash = HashKey(providedSecret);
 
             return storedHashedSecret == computedBase64Hash;
         }
