@@ -1,7 +1,9 @@
 ﻿using Bogus;
 using SenderEntity = XpressShip.Domain.Entities.Users.Sender;
+using AdminEntity = XpressShip.Domain.Entities.Users.Admin;
 using ApiClientEntity = XpressShip.Domain.Entities.ApiClient;
 using DataConstants = XpressShip.Tests.Common.Constants.Constants;
+using XpressShip.Application.Features.Auth.Admin.Register;
 
 namespace XpressShip.Tests.Common.Factories
 {
@@ -30,6 +32,61 @@ namespace XpressShip.Tests.Common.Factories
                 if (withAddress) client.Address = Address.GenerateOriginAddress();
 
                 return (client, rawSecretKey);
+            }
+        }
+
+        public static class Admin
+        {
+            private static readonly Faker _faker = new();
+
+            public static AdminEntity CreateFakeSender()
+            {
+                return AdminEntity.Create(
+                    _faker.Name.FirstName(),
+                    _faker.Name.LastName(),
+                    _faker.Internet.UserName(),
+                    _faker.Internet.Email(),
+                    _faker.Phone.PhoneNumber()
+                );
+            }
+
+            public static RegisterAdminCommand GenerateValidRegisterRequest()
+            {
+                return new RegisterAdminCommand()
+                {
+                    FirstName = DataConstants.Admin.FirstName,
+                    LastName = DataConstants.Admin.LastName,
+                    UserName = DataConstants.Admin.UserName,
+                    Email = DataConstants.Admin.Email,
+                    Phone = DataConstants.Admin.Phone,
+                    Password = "StrongPassword12345$",
+                    ConfirmPassword = "StrongPassword12345$"
+                };
+            }
+
+            public static RegisterAdminCommand GenerateInValidRegisterRequest()
+            {
+                return new RegisterAdminCommand()
+                {
+                    FirstName = string.Empty,
+                    LastName = string.Empty,
+                    UserName = string.Empty,
+                    Email = string.Empty,
+                    Phone = string.Empty,
+                    Password = "Invalid",
+                    ConfirmPassword = "Invalid"
+                };
+            }
+
+            public static AdminEntity GenerateAdmin()
+            {
+                var firstName = DataConstants.Admin.FirstName;
+                var lastName = DataConstants.Admin.LastName;
+                var userName = DataConstants.Admin.UserName;
+                var email = DataConstants.Admin.Email;
+                var phone = DataConstants.Admin.Phone;
+
+                return AdminEntity.Create(firstName, lastName, userName, email, phone);
             }
         }
         public static class Sender

@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\XpressShip.Tests.Common\XpressShip.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\XpressShip.Tests.Common\XpressShip.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

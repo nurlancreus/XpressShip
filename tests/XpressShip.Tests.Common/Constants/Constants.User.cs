@@ -17,6 +17,15 @@ namespace XpressShip.Tests.Common.Constants
             public const string Phone = "+994514566778";
         }
 
+        public static class Admin
+        {
+            public const string FirstName = "Admin";
+            public const string LastName = "Adminov";
+            public const string UserName = "admin";
+            public const string Email = "admin@example.com";
+            public const string Phone = "+994514566778";
+        }
+
         public static class ApiClient
         {
             public const string CompanyName = "Shoppe";
