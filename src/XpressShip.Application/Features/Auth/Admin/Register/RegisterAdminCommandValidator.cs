@@ -58,9 +58,11 @@ namespace XpressShip.Application.Features.Auth.Admin.Register
                 .WithMessage("Invalid phone number format.")
                 .MustAsync(async (phone, cancellationToken) =>
                 {
-                    var user = await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, cancellationToken);
+                    //var user = await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, cancellationToken);
 
-                    return user == null;
+                    //return user == null;
+
+                    return true;
                 })
                 .WithMessage("This phone number is already registered.");
 

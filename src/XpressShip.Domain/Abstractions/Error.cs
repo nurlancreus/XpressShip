@@ -63,6 +63,11 @@ namespace XpressShip.Domain.Abstractions
             return new(ErrorType.Forbidden, HttpStatusCode.Forbidden, message);
         }
 
+        public static Error TokenError(string message = "Token can not be generated")
+        {
+            return new(ErrorType.Token, HttpStatusCode.Forbidden, message);
+        }
+
         public static Error UnexpectedError(string message = "Unexpected error happened. Something went wrong")
         {
             return new(ErrorType.Unexpected, HttpStatusCode.InternalServerError, message);

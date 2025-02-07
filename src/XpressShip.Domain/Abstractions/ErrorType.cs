@@ -17,6 +17,7 @@ namespace XpressShip.Domain.Abstractions
         NotFound,
         Conflict,
         Validation,
+        Token,
         Unexpected,
         Unhandled
     }

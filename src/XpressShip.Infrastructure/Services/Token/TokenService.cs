@@ -93,7 +93,7 @@ namespace XpressShip.Infrastructure.Services.Token
             // Create the access token
             var accessTokenResult = await CreateAccessTokenAsync(user);
 
-            if (!accessTokenResult.IsSuccess) return Result<TokenDTO>.Failure(Error.UnexpectedError("Could not create access token."));
+            if (!accessTokenResult.IsSuccess) return Result<TokenDTO>.Failure(Error.TokenError("Could not create access token."));
 
             var accessToken = accessTokenResult.Value;
             var accessTokenEndDate = DateTime.UtcNow.AddMinutes(_accessSettings.AccessTokenLifeTimeInMinutes);
@@ -101,7 +101,7 @@ namespace XpressShip.Infrastructure.Services.Token
             // Create the refresh token
             var refreshTokenResult = CreateRefreshToken();
 
-            if (!refreshTokenResult.IsSuccess) return Result<TokenDTO>.Failure(Error.UnexpectedError("Could not create refresh token."));
+            if (!refreshTokenResult.IsSuccess) return Result<TokenDTO>.Failure(Error.TokenError("Could not create refresh token."));
 
             var refreshToken = refreshTokenResult.Value;
 
