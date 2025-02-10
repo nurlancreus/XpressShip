@@ -4,6 +4,8 @@ using AdminEntity = XpressShip.Domain.Entities.Users.Admin;
 using ApiClientEntity = XpressShip.Domain.Entities.ApiClient;
 using DataConstants = XpressShip.Tests.Common.Constants.Constants;
 using XpressShip.Application.Features.Auth.Admin.Register;
+using XpressShip.Application.Features.Addresses.DTOs;
+using XpressShip.Application.Features.ApiClients.Commands.Create;
 
 namespace XpressShip.Tests.Common.Factories
 {
@@ -32,6 +34,26 @@ namespace XpressShip.Tests.Common.Factories
                 if (withAddress) client.Address = Address.GenerateOriginAddress();
 
                 return (client, rawSecretKey);
+            }
+
+            public static CreateApiClientCommand GenerateApiClientCommand()
+            {
+                return new CreateApiClientCommand
+                {
+                    CompanyName = "Test Company",
+                    Email = "Test@example.com",
+                    Address = Address.GenerateAddressCommand()
+                };
+            }
+
+            public static CreateApiClientCommand GenerateInValidApiClientCommand()
+            {
+                return new CreateApiClientCommand
+                {
+                    CompanyName = string.Empty,
+                    Email = "invalid.email",
+                    Address = Address.GenerateInValidAddressCommand()
+                };
             }
         }
 

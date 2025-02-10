@@ -39,77 +39,85 @@ namespace XpressShip.Tests.Common.Handlers
 
             public class RegisterAdmin
             {
-                private readonly RegisterAdminHandler handler;
-                private readonly ValidationPipelineBehaviour<RegisterAdminCommand, Result<Unit>> validationBehaviour;
-                private readonly RegisterAdminCommandValidator validator;
-                private readonly Mock<IAdminNotificationService> mockAdminNotificationService;
+                private readonly RegisterAdminHandler _handler;
+                private readonly ValidationPipelineBehaviour<RegisterAdminCommand, Result<Unit>> _validationBehaviour;
+                private readonly ExceptionHandlingPipelineBehavior<RegisterAdminCommand, Result<Unit>> _exceptionHandlingBehaviour;
+                private readonly RegisterAdminCommandValidator _validator;
+                private readonly Mock<IAdminNotificationService> _mockAdminNotificationService;
 
                 public RegisterAdmin(Auth auth)
                 {
-                    mockAdminNotificationService = new Mock<IAdminNotificationService>();
+                    _mockAdminNotificationService = new Mock<IAdminNotificationService>();
 
-                    handler = new RegisterAdminHandler(
-                    auth.mockUserManager.Object, mockAdminNotificationService.Object);
+                    _handler = new RegisterAdminHandler(
+                    auth.mockUserManager.Object, _mockAdminNotificationService.Object);
 
-                    validator = new RegisterAdminCommandValidator(auth.mockUserManager.Object);
+                    _validator = new RegisterAdminCommandValidator(auth.mockUserManager.Object);
 
-                    validationBehaviour = new ValidationPipelineBehaviour<RegisterAdminCommand, Result<Unit>>(
-                        [validator]);
+                    _validationBehaviour = new ValidationPipelineBehaviour<RegisterAdminCommand, Result<Unit>>(
+                        [_validator]);
+                    _exceptionHandlingBehaviour = new ExceptionHandlingPipelineBehavior<RegisterAdminCommand, Result<Unit>>();
                 }
 
                 public async Task<Result<Unit>> Handle(RegisterAdminCommand request)
                 {
-                    return await validationBehaviour.Handle(request, () => handler.Handle(request, CancellationToken.None), CancellationToken.None);
+
+                    return await _exceptionHandlingBehaviour.Handle(request, () => _validationBehaviour.Handle(request, () => _handler.Handle(request, CancellationToken.None), CancellationToken.None), CancellationToken.None);
                 }
             }
 
             public class LoginAdmin
             {
-                public readonly LoginAdminHandler handler;
-                public readonly ValidationPipelineBehaviour<LoginAdminCommand, Result<TokenDTO>> validationBehaviour;
-                public readonly LoginAdminCommandValidator validator;
+                private readonly LoginAdminHandler _handler;
+                private readonly ExceptionHandlingPipelineBehavior<LoginAdminCommand, Result<TokenDTO>> _exceptionHandlingBehaviour;
+                private readonly ValidationPipelineBehaviour<LoginAdminCommand, Result<TokenDTO>> _validationBehaviour;
+                private readonly LoginAdminCommandValidator _validator;
 
                 public LoginAdmin(Auth auth)
                 {
-                    handler = new LoginAdminHandler(
+                    _handler = new LoginAdminHandler(
                     auth.mockUserManager.Object,
                     auth.mockSignInManager.Object,
                     auth.mockTokenService.Object);
 
-                    validator = new LoginAdminCommandValidator();
+                    _validator = new LoginAdminCommandValidator();
 
-                    validationBehaviour = new ValidationPipelineBehaviour<LoginAdminCommand, Result<TokenDTO>>(
-                        [validator]);
+                    _validationBehaviour = new ValidationPipelineBehaviour<LoginAdminCommand, Result<TokenDTO>>(
+                        [_validator]);
+                    _exceptionHandlingBehaviour = new ExceptionHandlingPipelineBehavior<LoginAdminCommand, Result<TokenDTO>>();
                 }
 
                 public async Task<Result<TokenDTO>> Handle(LoginAdminCommand request)
                 {
-                    return await validationBehaviour.Handle(request, () => handler.Handle(request, CancellationToken.None), CancellationToken.None);
+                    return await _exceptionHandlingBehaviour.Handle(request, () => _validationBehaviour.Handle(request, () => _handler.Handle(request, CancellationToken.None), CancellationToken.None), CancellationToken.None);
                 }
             }
 
             public class LoginSender
             {
-                public readonly LoginSenderHandler handler;
-                public readonly ValidationPipelineBehaviour<LoginSenderCommand, Result<TokenDTO>> validationBehaviour;
-                public readonly LoginSenderCommandValidator validator;
+                private readonly LoginSenderHandler _handler;
+                private readonly ExceptionHandlingPipelineBehavior<LoginSenderCommand, Result<TokenDTO>> _exceptionHandlingBehaviour;
+                private readonly ValidationPipelineBehaviour<LoginSenderCommand, Result<TokenDTO>> _validationBehaviour;
+                private readonly LoginSenderCommandValidator _validator;
 
                 public LoginSender(Auth auth)
                 {
-                    handler = new LoginSenderHandler(
+                    _handler = new LoginSenderHandler(
                     auth.mockUserManager.Object,
                     auth.mockSignInManager.Object,
                     auth.mockTokenService.Object);
 
-                    validator = new LoginSenderCommandValidator();
+                    _validator = new LoginSenderCommandValidator();
 
-                    validationBehaviour = new ValidationPipelineBehaviour<LoginSenderCommand, Result<TokenDTO>>(
-                        [validator]);
+                    _validationBehaviour = new ValidationPipelineBehaviour<LoginSenderCommand, Result<TokenDTO>>(
+                        [_validator]);
+
+                    _exceptionHandlingBehaviour = new ExceptionHandlingPipelineBehavior<LoginSenderCommand, Result<TokenDTO>>();
                 }
 
                 public async Task<Result<TokenDTO>> Handle(LoginSenderCommand request)
                 {
-                    return await validationBehaviour.Handle(request, () => handler.Handle(request, CancellationToken.None), CancellationToken.None);
+                    return await _exceptionHandlingBehaviour.Handle(request, () => _validationBehaviour.Handle(request, () => _handler.Handle(request, CancellationToken.None), CancellationToken.None), CancellationToken.None);
                 }
             }
 

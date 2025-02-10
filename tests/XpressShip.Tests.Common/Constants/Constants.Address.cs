@@ -35,5 +35,14 @@ namespace XpressShip.Tests.Common.Constants
             public const string PostalCodePattern = @"AZ\s\d{4}$";
             public const decimal TaxPercentage = 20;
         }
+
+        public static class AddressCommand
+        {
+
+            public const string Country = "Azerbaijan";
+            public const string City = "Ganja";
+            public const string PostalCode = "AZ 1234";
+            public const string Street = "Mesheti Gencevi 34.A";
+        }
     }
 }

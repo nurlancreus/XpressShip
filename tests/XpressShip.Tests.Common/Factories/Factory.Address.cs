@@ -1,4 +1,5 @@
 ﻿using Bogus;
+using XpressShip.Application.Features.Addresses.DTOs;
 using XpressShip.Domain.Entities;
 using AddressEntity = XpressShip.Domain.Entities.Address;
 using DataConstants = XpressShip.Tests.Common.Constants.Constants;
@@ -19,6 +20,28 @@ namespace XpressShip.Tests.Common.Factories
                     _faker.Address.Latitude(),
                     _faker.Address.Longitude()
                 );
+            }
+
+            public static AddressCommandDTO GenerateAddressCommand()
+            {
+                return new AddressCommandDTO
+                {
+                    Country = DataConstants.AddressCommand.Country,
+                    City = DataConstants.AddressCommand.City,
+                    PostalCode = DataConstants.AddressCommand.PostalCode,
+                    Street = DataConstants.AddressCommand.Street
+                };
+            }
+
+            public static AddressCommandDTO GenerateInValidAddressCommand()
+            {
+                return new AddressCommandDTO
+                {
+                    Country = string.Empty,
+                    City = string.Empty,
+                    PostalCode = string.Empty,
+                    Street = string.Empty
+                };
             }
             public static AddressEntity GenerateOriginAddress(bool withCity = true)
             {

@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -7,6 +6,7 @@ using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities.Users;
 using XpressShip.Tests.Common.Factories;
 using XpressShip.Tests.Common.Handlers;
+using Moq.EntityFrameworkCore;
 
 namespace XpressShip.Application.Tests.Unit.Auth
 {
@@ -38,14 +38,7 @@ namespace XpressShip.Application.Tests.Unit.Auth
                Admin.Create(request.FirstName, request.LastName, request.UserName, request.Email, "999999999")
             }.AsQueryable();
 
-            var mockUserSet = new Mock<DbSet<ApplicationUser>>();
-
-            mockUserSet.As<IQueryable<ApplicationUser>>().Setup(m => m.Provider).Returns(existingUsers.Provider);
-            mockUserSet.As<IQueryable<ApplicationUser>>().Setup(m => m.Expression).Returns(existingUsers.Expression);
-            mockUserSet.As<IQueryable<ApplicationUser>>().Setup(m => m.ElementType).Returns(existingUsers.ElementType);
-            mockUserSet.As<IQueryable<ApplicationUser>>().Setup(m => m.GetEnumerator()).Returns(existingUsers.GetEnumerator());
-
-            _mockUserManager.Setup(x => x.Users).Returns(mockUserSet.Object);
+            _mockUserManager.Setup(x => x.Users).Returns(existingUsers);
 
             _mockUserManager.Setup(x => x.FindByNameAsync(request.UserName))
                 .ReturnsAsync((ApplicationUser)null!);
@@ -63,16 +56,17 @@ namespace XpressShip.Application.Tests.Unit.Auth
         }
 
         [Fact]
-        public async Task Handle_WhenInValidCredentials_ThrowException()
+        public async Task Handle_WhenInValidCredentials_ReturnsFailure()
         {
             // Arrange
             var request = Factory.Admin.GenerateInValidRegisterRequest();
 
             // Act
-            var action = async () => await _registerAdminHandler.Handle(request);
+            var result = await _registerAdminHandler.Handle(request);
 
             // Assert
-            await action.Should().ThrowExactlyAsync<ValidationException>();
+            result.IsFailure.Should().BeTrue();
+            result.Error.Type.Should().Be(ErrorType.Validation);
         }
 
 
@@ -90,7 +84,7 @@ namespace XpressShip.Application.Tests.Unit.Auth
 
             // Assert
             result.IsFailure.Should().BeTrue();
-            result.Error.Should().BeEquivalentTo(Error.RegisterError());
+            result.Error.Type.Should().Be(ErrorType.Register);
             result.Error.Message.Should().Contain("Wrong credentials");
         }
     }

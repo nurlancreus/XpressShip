@@ -9,7 +9,6 @@ using XpressShip.Domain.Entities.Users;
 using XpressShip.Tests.Common.Handlers;
 using XpressShip.Tests.Common.Factories;
 using DataConstants = XpressShip.Tests.Common.Constants.Constants;
-using FluentValidation;
 
 namespace XpressShip.Application.Tests.Unit.Auth
 {
@@ -50,7 +49,7 @@ namespace XpressShip.Application.Tests.Unit.Auth
 
             // Assert
             result.IsFailure.Should().BeTrue();
-            result.Error.Should().BeEquivalentTo(Error.TokenError());
+            result.Error.Type.Should().Be(ErrorType.Token);
         }
 
         [Fact]
@@ -100,7 +99,7 @@ namespace XpressShip.Application.Tests.Unit.Auth
 
             // Assert
             result.IsFailure.Should().BeTrue();
-            result.Error.Should().BeEquivalentTo(Error.LoginError());
+            result.Error.Type.Should().Be(ErrorType.Login);
             result.Error.Message.Should().Contain("Wrong credentials");
         }
 
@@ -111,10 +110,11 @@ namespace XpressShip.Application.Tests.Unit.Auth
             var request = new LoginSenderCommand { UserName = "", Password = "password" };
 
             // Act
-            var action = async () => await _loginSenderHandler.Handle(request);
+            var result = await _loginSenderHandler.Handle(request);
 
             // Assert
-            await action.Should().ThrowExactlyAsync<ValidationException>();
+            result.IsFailure.Should().BeTrue();
+            result.Error.Type.Should().Be(ErrorType.Validation);
         }
 
         [Fact]
@@ -124,10 +124,11 @@ namespace XpressShip.Application.Tests.Unit.Auth
             var request = new LoginSenderCommand { UserName = DataConstants.Sender.UserName, Password = "" };
 
             // Act
-            var action = async () => await _loginSenderHandler.Handle(request);
+            var result = await _loginSenderHandler.Handle(request);
 
             // Assert
-            await action.Should().ThrowExactlyAsync<ValidationException>();
+            result.IsFailure.Should().BeTrue();
+            result.Error.Type.Should().Be(ErrorType.Validation);
         }
 
         [Fact]
@@ -137,10 +138,11 @@ namespace XpressShip.Application.Tests.Unit.Auth
             var request = new LoginSenderCommand { UserName = "", Password = "" };
 
             // Act
-            var action = async () => await _loginSenderHandler.Handle(request);
+            var result = await _loginSenderHandler.Handle(request);
 
             // Assert
-            await action.Should().ThrowExactlyAsync<ValidationException>();
+            result.IsFailure.Should().BeTrue();
+            result.Error.Type.Should().Be(ErrorType.Validation);
         }
     }
 }
