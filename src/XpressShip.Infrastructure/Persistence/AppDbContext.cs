@@ -2,9 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
-using XpressShip.Domain.Abstractions;
 using XpressShip.Domain.Entities;
-using XpressShip.Domain.Entities.Base;
 using XpressShip.Domain.Entities.Identity;
 using XpressShip.Domain.Entities.Users;
 using XpressShip.Infrastructure.Persistence.Configurations;
