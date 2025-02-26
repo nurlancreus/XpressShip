@@ -1,6 +1,6 @@
 # XpressShip
 
-XpressShip is a comprehensive shipping management solution built using **ASP.NET Core Minimal API**. It follows a **layered architecture** to ensure a clear separation of concerns and a scalable codebase.
+XpressShip is a comprehensive shipping management solution built using **ASP.NET Core Minimal API**. It follows a **clean architecture** to ensure a clear separation of concerns and a scalable codebase.
 
 ## Features
 
