@@ -112,5 +112,5 @@ Contributions are welcome! However, **feature additions are not allowed**. If yo
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Contact
-For any inquiries, reach out via [your-email@example.com](mailto:your-email@example.com) or open an issue in the repository.
+For any inquiries, reach out via [nurlancreus007@gmail.com](mailto:nurlancreus007@gmail.com) or open an issue in the repository.
 
